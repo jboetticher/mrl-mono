@@ -1,26 +1,46 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import { CHAIN_ID_TO_NAME, CHAINS, ChainId, transferFromEthNative } from "@certusone/wormhole-sdk";
+import {
+  Container,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Typography,
+} from "@mui/material";
 
-function App() {
+const App: React.FC = () => {
+  const [selectedNetwork, setSelectedNetwork] = useState<ChainId | "">("");
+
+  const handleChange = (event: { target: { value: any; }; }) => {
+    setSelectedNetwork(event.target.value as ChainId);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <Container>
+      <Typography variant="h4" gutterBottom>
+        Wormhole Network Selector
+      </Typography>
+      <FormControl fullWidth variant="outlined">
+        <InputLabel htmlFor="network">Select a Network</InputLabel>
+        <Select
+          value={selectedNetwork}
+          onChange={handleChange}
+          label="Select a Network"
+          inputProps={{
+            name: "network",
+            id: "network",
+          }}
         >
-          Learn React
-        </a>
-      </header>
-    </div>
+          {Object.entries(CHAINS).map(x => (
+            <MenuItem key={x[0]} value={x[1]}>
+              {CHAIN_ID_TO_NAME[x[1]]}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Container>
   );
-}
+};
 
 export default App;

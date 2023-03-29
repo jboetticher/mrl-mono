@@ -1,5 +1,4 @@
 import { TypeRegistry, Enum, Struct } from '@polkadot/types';
-import { MultiLocation } from '@polkadot/types/interfaces';
 
 const registry = new TypeRegistry();
 

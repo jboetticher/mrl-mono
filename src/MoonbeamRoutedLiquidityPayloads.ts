@@ -17,7 +17,6 @@ class XcmRoutingUserAction extends Struct {
 
 /**The parachain IDs of each parachain. Rarely subject to change */
 export enum Parachain {
-  DummyParachain = 123,
   MoonbaseBeta = 888,
   Interlay = 2032,
   HydraDX = 2034
@@ -46,13 +45,13 @@ export const MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE = tryNativeToUint8Array("0x000
 export default function createMRLPayload(parachainId: Parachain, account: string): Uint8Array {
   // Create a multilocation object & scale encode it to get the right payload
   let multilocation;
-  if(parachainId in ETHEREUM_ACCOUNT_PARACHAINS) {
+  if(ETHEREUM_ACCOUNT_PARACHAINS.includes(parachainId)) {
     multilocation = { 
       parents: 1, 
       interior: { 
         X2: [
           { Parachain: parachainId }, 
-          { AccountId32: { network: 'Any', id: account } 
+          { AccountKey20: { network: 'Any', key: account } 
         }] 
       }
     };
@@ -63,7 +62,7 @@ export default function createMRLPayload(parachainId: Parachain, account: string
       interior: { 
         X2: [
           { Parachain: parachainId }, 
-          { AccountKey20: { network: 'Any', id: account } 
+          { AccountId32: { network: 'Any', id: account } 
         }] 
       }
     };

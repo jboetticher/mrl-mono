@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { CHAINS, tryNativeToUint8Array, transferFromEthNative } from "@certusone/wormhole-sdk";
-import { Container, Typography, Button } from "@mui/material";
-import scaleEncodePayload from "./ScaleEncodePayload";
-import { useEtherBalance, useEthers, FantomTestnet } from '@usedapp/core'
+import { Typography, Button } from "@mui/material";
+import createMRLPayload, { MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE, Parachain } from "./MoonbeamRoutedLiquidityPayloads";
+import { useEtherBalance, useEthers } from '@usedapp/core'
 import { formatEther, parseEther } from '@ethersproject/units'
 import { providers } from 'ethers'
 
@@ -11,23 +11,23 @@ export default function () {
   const etherBalance = useEtherBalance(account)
 
   async function handleXCMTransfer() {
-    // Create a multilocation object & scale encode it to get the right payload
-    let multilocation = { parents: 1, interior: { X2: [{ Parachain: 123 }, { AccountId32: { network: 'Any', id: 0 } }] } };
-    let payload = scaleEncodePayload(multilocation);
-
     if (account == undefined) {
       alert("No account connected!");
       return;
     }
     const l = library as providers.JsonRpcProvider;
 
+    // Create the payload that we will send over
+    let payload = createMRLPayload(Parachain.DummyParachain, account);
+
+    // Transfer with payload
     transferFromEthNative(
       "0x599CEa2204B4FaECd584Ab1F2b6aCA137a0afbE8",
       l.getSigner(),
       parseEther("0.1"),
       CHAINS.moonbeam,
-      tryNativeToUint8Array("0x0000000000000000000000000000000000000815", CHAINS.fantom),
-      0, // relayerFee
+      MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
+      0, // relayerFee, will be increased later
       undefined,
       payload
     );

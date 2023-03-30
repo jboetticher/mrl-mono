@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { CHAINS, transferFromEthNative } from "@certusone/wormhole-sdk";
-import { Container, Typography, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from "@mui/material";
+import { Container, Typography, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, TextField } from "@mui/material";
 import createMRLPayload, { MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE, Parachain, ETHEREUM_ACCOUNT_PARACHAINS } from "./MoonbeamRoutedLiquidityPayloads";
 import { useEtherBalance, useEthers } from '@usedapp/core'
 import { formatEther, parseEther } from '@ethersproject/units'
@@ -10,10 +10,10 @@ export default function () {
   const { account, library } = useEthers();
   const etherBalance = useEtherBalance(account)
   const [selectedNetwork, setSelectedNetwork] = useState(Parachain.MoonbaseBeta);
+  const [acc32, setAcc32] = useState("");
 
-  function handleChange(e: SelectChangeEvent<Parachain>) {
-    setSelectedNetwork(e.target.value as Parachain);
-  }
+  const ParachainEntries = Object.entries(Parachain);
+  const isEthereumStyledParachain = (x: Parachain) => ETHEREUM_ACCOUNT_PARACHAINS.includes(x); 
 
   async function handleXCMTransfer() {
     if (account == undefined) {
@@ -23,7 +23,7 @@ export default function () {
     const l = library as providers.JsonRpcProvider;
 
     // Create the payload that we will send over
-    let payload = createMRLPayload(selectedNetwork, account);
+    let payload = createMRLPayload(selectedNetwork, isEthereumStyledParachain(selectedNetwork) ? account : acc32);
 
     // Transfer with payload
     // transferFromEthNative(
@@ -38,7 +38,6 @@ export default function () {
     // );
   }
 
-  const ParachainEntries = Object.entries(Parachain); 
 
   return (
     <Container style={{ marginTop: 50 }}>
@@ -53,7 +52,7 @@ export default function () {
           <InputLabel htmlFor="network">Select a Network</InputLabel>
           <Select
             value={selectedNetwork}
-            onChange={handleChange}
+            onChange={(e) => setSelectedNetwork(e.target.value as Parachain)}
             label="Select a Network"
             inputProps={{
               name: "network",
@@ -62,10 +61,20 @@ export default function () {
           >
             {ParachainEntries.filter(x => isNaN(parseInt(x[0]))).map(x => (
               <MenuItem key={x[0]} value={x[1]}>
-                {x[0]} ({ETHEREUM_ACCOUNT_PARACHAINS.includes(x[1] as Parachain) ? 'AccountKey20' : 'AccountId32'})
+                {x[0]} ({isEthereumStyledParachain(x[1] as Parachain) ? 'AccountKey20' : 'AccountId32'})
               </MenuItem>
             ))}
           </Select>
+          {!isEthereumStyledParachain(selectedNetwork) &&
+            <>
+              <TextField value={acc32} 
+                style={{ marginTop: 20 }}
+                label="Input your Account32 Address"
+                onChange={(e) => { setAcc32(e.target.value) }} 
+                inputProps={{ name: "account", id: "account" }} 
+              />
+            </>
+          }
         </FormControl>
       </Container>
       {etherBalance && (

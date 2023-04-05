@@ -34,7 +34,7 @@ export const SUBSTRATE_ACCOUNT_PARACHAINS = [
 ];
 
 /**The Uint8Array format of the MRL precompile */
-export const MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE = tryNativeToUint8Array("0x0000000000000000000000000000000000000815", CHAINS.moonbeam);
+export const MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE = tryNativeToUint8Array("0x0000000000000000000000000000000000000816", CHAINS.moonbeam);
 
 /**
  * Creates a payload that can instruct Moonbeam's Routed Liquidity precompile where to send data

@@ -13,7 +13,7 @@ export default function () {
   const [acc32, setAcc32] = useState("");
 
   const ParachainEntries = Object.entries(Parachain);
-  const isEthereumStyledParachain = (x: Parachain) => ETHEREUM_ACCOUNT_PARACHAINS.includes(x); 
+  const isEthereumStyledParachain = (x: Parachain) => ETHEREUM_ACCOUNT_PARACHAINS.includes(x);
 
   async function handleXCMTransfer() {
     if (account == undefined) {
@@ -55,13 +55,8 @@ export default function () {
           </Box>
           {etherBalance && (
             <>
-              <div className="balance">
-                <br />
-                Address:
-                <p className="bold">{account}</p>
-                <br />
-                Balance:
-                <p className="bold">{formatEther(etherBalance)}</p>
+              <div style={{ marginBottom: 8 }}>
+                <b>Balance: {formatEther(etherBalance)}</b>
               </div>
               <Button variant="contained" onClick={handleXCMTransfer}>
                 Click to Transfer
@@ -84,7 +79,17 @@ const ConnectButton = () => {
 
   if (chainId && chainId != FantomTestnet.chainId) switchNetwork(FantomTestnet.chainId);
 
-  // 'account' being undefined means that we are not connected.
-  if (account) return <Button style={style} onClick={deactivate}>Disconnect</Button>
-  else return <Button style={style} onClick={activateBrowserWallet}>Connect</Button>
+  // Connecting to the wallet
+  const handleWalletConnection = () => {
+    if (account) deactivate();
+    else activateBrowserWallet();
+  };
+
+  return (
+    <Box position="absolute" top={20} right={24}>
+      <Button variant="contained" onClick={handleWalletConnection}>
+        {account ? `Disconnect ${account.substring(0, 5) + '...'}` : 'Connect Wallet'}
+      </Button>
+    </Box>
+  );
 }

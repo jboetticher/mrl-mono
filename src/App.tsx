@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { CHAINS, transferFromEthNative } from "@certusone/wormhole-sdk";
-import { Container, Typography, Button, FormControl, Box, Card, CardContent, InputLabel, Select, MenuItem, SelectChangeEvent } from "@mui/material";
+import { CHAINS, transferFromEth, transferFromEthNative, approveEth } from "@certusone/wormhole-sdk";
+import {
+  Container, Typography, Button, Box, Card, CardContent,
+  FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, TextField
+} from "@mui/material";
 import createMRLPayload, { MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE, Parachain, ETHEREUM_ACCOUNT_PARACHAINS } from "./MoonbeamRoutedLiquidityPayloads";
 import { FantomTestnet, useEtherBalance, useEthers } from '@usedapp/core'
-import { formatEther, parseEther } from '@ethersproject/units'
+import { parseEther } from '@ethersproject/units'
 import { providers } from 'ethers'
 
 enum Tokens {
@@ -11,12 +14,15 @@ enum Tokens {
   USDC
 }
 
+const FANTOM_TESTNET_TOKEN_BRIDGE = "0x599CEa2204B4FaECd584Ab1F2b6aCA137a0afbE8";
+const FANTOM_TESTNET_USDC = "0xDF7928AF5B33F7de592594958D8d6Ff8472Eb407";
+
 export default function () {
   const { account, library, chainId } = useEthers();
   const etherBalance = useEtherBalance(account)
   const [selectedNetwork, setSelectedNetwork] = useState(Parachain.MoonbaseBeta);
   const [selectedToken, setSelectedToken] = useState<Tokens>(Tokens.FTM);
-  const [acc32, setAcc32] = useState(""); // TODO: input for Polkadot account
+  const [acc32, setAcc32] = useState("");
 
   const ParachainEntries = Object.entries(Parachain);
   const isEthereumStyledParachain = (x: Parachain) => ETHEREUM_ACCOUNT_PARACHAINS.includes(x);
@@ -32,16 +38,42 @@ export default function () {
     let payload = createMRLPayload(selectedNetwork, isEthereumStyledParachain(selectedNetwork) ? account : acc32);
 
     // Transfer with payload
-    transferFromEthNative(
-      "0x599CEa2204B4FaECd584Ab1F2b6aCA137a0afbE8",
-      l.getSigner(),
-      parseEther("1"),
-      CHAINS.moonbeam,
-      MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
-      0, // relayerFee, doesn't matter because it's contract controlled
-      undefined,
-      payload
-    );
+    switch (selectedToken) {
+      case Tokens.FTM:
+        transferFromEthNative(
+          FANTOM_TESTNET_TOKEN_BRIDGE,
+          l.getSigner(),
+          parseEther("0.1"),
+          CHAINS.moonbeam,
+          MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
+          0, // relayerFee, doesn't matter because it's contract controlled
+          undefined,
+          payload
+        );
+        break;
+      case Tokens.USDC:
+        transferFromEth(
+          FANTOM_TESTNET_TOKEN_BRIDGE,
+          l.getSigner(),
+          FANTOM_TESTNET_USDC,
+          "500000",
+          CHAINS.moonbeam,
+          MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
+          0,
+          undefined,
+          payload
+        );
+        break;
+    }
+  }
+
+  async function handleUSDCApprove() {
+    if (account == undefined) {
+      alert("No account connected!");
+      return;
+    }
+    const l = library as providers.JsonRpcProvider;
+    approveEth(FANTOM_TESTNET_TOKEN_BRIDGE, FANTOM_TESTNET_USDC, l.getSigner(), "500000");
   }
 
   function SendTokensForm() {
@@ -79,6 +111,16 @@ export default function () {
               ))}
           </Select>
         </FormControl>
+        {!ETHEREUM_ACCOUNT_PARACHAINS.includes(selectedNetwork as Parachain) &&
+          <FormControl fullWidth variant="outlined" style={{ marginBottom: 12 }}>
+            <TextField
+              value={acc32}
+              onChange={(e) => setAcc32(e.target.value)}
+              label="AccountId32 Address"
+              inputProps={{ name: "acc32", id: "acc32" }}
+            />
+          </FormControl>
+        }
       </Box>
     );
   }
@@ -95,7 +137,12 @@ export default function () {
           </Typography>
           <SendTokensForm />
           {etherBalance && (
-            <Box display="flex" justifyContent="center" alignItems="center">
+            <Box display="flex" justifyContent="space-evenly" alignItems="center">
+              {selectedToken != Tokens.FTM &&
+                <Button variant="contained" onClick={handleUSDCApprove}>
+                  Approve Token
+                </Button>
+              }
               <Button variant="contained" onClick={handleXCMTransfer}>
                 Click to Transfer
               </Button>
@@ -116,8 +163,7 @@ const ConnectButton = () => {
   const style: React.CSSProperties = { position: 'absolute', top: 40, right: 40 };
 
   useEffect(() => {
-    if (chainId && chainId != FantomTestnet.chainId) switchNetwork(FantomTestnet.chainId);
-    alert('awooga')
+    if (chainId && chainId != FantomTestnet.chainId) { switchNetwork(FantomTestnet.chainId); }
   }, [chainId]);
 
   // Connecting to the wallet

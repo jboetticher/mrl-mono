@@ -19,7 +19,8 @@ class XcmRoutingUserAction extends Struct {
 export enum Parachain {
   MoonbaseBeta = 888,
   Interlay = 2032,
-  HydraDX = 2034
+  HydraDX = 2034,
+  Manta = 2104
 }
 
 /**List of parachains that use ethereum (20) accounts */

@@ -125,6 +125,8 @@ export default function () {
     );
   }
 
+  const sendingAmount = selectedToken == Tokens.FTM ? '0.1' : '0.5';
+
   return (
     <Container maxWidth="md" style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <Card style={{ width: '100%', borderRadius: 15, overflow: 'hidden' }}>
@@ -133,7 +135,7 @@ export default function () {
             Wormhole Network Selector
           </Typography>
           <Typography variant="h6" gutterBottom textAlign='center'>
-            Transfer 0.1 {Tokens[selectedToken]} from <b>Fantom Testnet</b> ► Moonbase Alpha ► {ParachainEntries.find(([k, v]) => v === selectedNetwork)?.[0]}
+            Transfer {sendingAmount} {Tokens[selectedToken]} from <b>Fantom Testnet</b> ► Moonbase Alpha ► {ParachainEntries.find(([k, v]) => v === selectedNetwork)?.[0]}
           </Typography>
           <SendTokensForm />
           {etherBalance && (

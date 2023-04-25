@@ -8,6 +8,7 @@ import createMRLPayload, { MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE, Parachain, ETHE
 import { FantomTestnet, useEtherBalance, useEthers } from '@usedapp/core'
 import { parseEther } from '@ethersproject/units'
 import { providers } from 'ethers'
+import PolkadotConnector from "./PolkadotConnector";
 
 enum Tokens {
   FTM,
@@ -113,12 +114,17 @@ export default function () {
         </FormControl>
         {!ETHEREUM_ACCOUNT_PARACHAINS.includes(selectedNetwork as Parachain) &&
           <FormControl fullWidth variant="outlined" style={{ marginBottom: 12 }}>
-            <TextField
-              value={acc32}
-              onChange={(e) => setAcc32(e.target.value)}
-              label="AccountId32 Address"
-              inputProps={{ name: "acc32", id: "acc32" }}
-            />
+            <Box display="flex" justifyContent="space-between">
+              <PolkadotConnector setAcc32={setAcc32} />
+              <TextField
+                value={acc32}
+                onChange={(e) => setAcc32(e.target.value)}
+                label="AccountId32 Address"
+                inputProps={{ name: "acc32", id: "acc32" }}
+                disabled={true}
+                style={{ flexGrow: 1 }}
+              />
+            </Box>
           </FormControl>
         }
       </Box>

@@ -18,7 +18,7 @@ enum Tokens {
 const FANTOM_TESTNET_TOKEN_BRIDGE = "0x599CEa2204B4FaECd584Ab1F2b6aCA137a0afbE8";
 const FANTOM_TESTNET_USDC = "0xDF7928AF5B33F7de592594958D8d6Ff8472Eb407";
 
-export default function () {
+export default function App() {
   const { account, library, chainId } = useEthers();
   const etherBalance = useEtherBalance(account)
   const [selectedNetwork, setSelectedNetwork] = useState(Parachain.MoonbaseBeta);
@@ -29,7 +29,7 @@ export default function () {
   const isEthereumStyledParachain = (x: Parachain) => ETHEREUM_ACCOUNT_PARACHAINS.includes(x);
 
   async function handleXCMTransfer() {
-    if (account == undefined) {
+    if (account === undefined) {
       alert("No account connected!");
       return;
     }
@@ -69,7 +69,7 @@ export default function () {
   }
 
   async function handleUSDCApprove() {
-    if (account == undefined) {
+    if (account === undefined) {
       alert("No account connected!");
       return;
     }
@@ -131,7 +131,7 @@ export default function () {
     );
   }
 
-  const sendingAmount = selectedToken == Tokens.FTM ? '0.1' : '0.5';
+  const sendingAmount = selectedToken === Tokens.FTM ? '0.1' : '0.5';
 
   return (
     <Container maxWidth="md" style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -146,7 +146,7 @@ export default function () {
           <SendTokensForm />
           {etherBalance && (
             <Box display="flex" justifyContent="space-evenly" alignItems="center">
-              {selectedToken != Tokens.FTM &&
+              {selectedToken !== Tokens.FTM &&
                 <Button variant="contained" onClick={handleUSDCApprove}>
                   Approve Token
                 </Button>
@@ -156,7 +156,7 @@ export default function () {
               </Button>
             </Box>
           )}
-          {chainId != FantomTestnet.chainId && <p>Ensure that you are connected to the Fantom Testnet.</p>}
+          {chainId !== FantomTestnet.chainId && <p>Ensure that you are connected to the Fantom Testnet.</p>}
           <ConnectButton />
         </CardContent>
       </Card>
@@ -168,11 +168,11 @@ export default function () {
 const ConnectButton = () => {
   const { account, deactivate, activateBrowserWallet, switchNetwork, chainId } = useEthers()
 
-  const style: React.CSSProperties = { position: 'absolute', top: 40, right: 40 };
+  // const style: React.CSSProperties = { position: 'absolute', top: 40, right: 40 };
 
   useEffect(() => {
-    if (chainId && chainId != FantomTestnet.chainId) { switchNetwork(FantomTestnet.chainId); }
-  }, [chainId]);
+    if (chainId && chainId !== FantomTestnet.chainId) { switchNetwork(FantomTestnet.chainId); }
+  }, [chainId, switchNetwork]);
 
   // Connecting to the wallet
   const handleWalletConnection = () => {

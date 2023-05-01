@@ -12,7 +12,7 @@ const config: Config = {
   },
 }
 
-const root = ReactDOM.render(
+ReactDOM.render(
   <React.StrictMode>
     <DAppProvider config={config}>
       <App />

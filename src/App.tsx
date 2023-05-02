@@ -158,6 +158,7 @@ export default function App() {
           )}
           {chainId !== FantomTestnet.chainId && <p>Ensure that you are connected to the Fantom Testnet.</p>}
           <ConnectButton />
+          <AddNetworkButton />
         </CardContent>
       </Card>
     </Container>
@@ -165,14 +166,25 @@ export default function App() {
 
 };
 
-const ConnectButton = () => {
-  const { account, deactivate, activateBrowserWallet, switchNetwork, chainId } = useEthers()
-
-  // const style: React.CSSProperties = { position: 'absolute', top: 40, right: 40 };
+const AddNetworkButton = () => {
+  const { switchNetwork, chainId } = useEthers()
 
   useEffect(() => {
     if (chainId && chainId !== FantomTestnet.chainId) { switchNetwork(FantomTestnet.chainId); }
   }, [chainId, switchNetwork]);
+
+  if (chainId !== FantomTestnet.chainId) return (
+    <Box position="absolute" top={20} right={230}>
+      <Button variant="contained" onClick={() => switchNetwork(FantomTestnet.chainId)}>
+        Switch to Fantom
+      </Button>
+    </Box>
+  )
+  else return <></>;
+}
+
+const ConnectButton = () => {
+  const { account, deactivate, activateBrowserWallet } = useEthers()
 
   // Connecting to the wallet
   const handleWalletConnection = () => {
@@ -188,4 +200,3 @@ const ConnectButton = () => {
     </Box>
   );
 }
-

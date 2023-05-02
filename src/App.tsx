@@ -180,7 +180,13 @@ const AddNetworkButton = () => {
       </Button>
     </Box>
   )
-  else return <></>;
+  else return (
+    <Box position="absolute" top={20} right={230}>
+      <Button variant="contained" onClick={() => window.open('https://faucet.fantom.network/','_blank')}>
+        Go to Faucet
+      </Button>
+    </Box>
+  );
 }
 
 const ConnectButton = () => {

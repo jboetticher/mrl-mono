@@ -44,40 +44,29 @@ export const MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE = tryNativeToUint8Array("0x000
  * @returns {Uint8Array} A Uint8Array that defines the 
  */
 export default function createMRLPayload(parachainId: Parachain, account: string): Uint8Array {
-  // Create a multilocation object & scale encode it to get the right payload
-  let multilocation;
-  if(ETHEREUM_ACCOUNT_PARACHAINS.includes(parachainId)) {
-    multilocation = { 
-      parents: 1, 
-      interior: { 
-        X2: [
-          { Parachain: parachainId }, 
-          { AccountKey20: { network: 'Any', key: account } 
-        }] 
-      }
-    };
-  }
-  else {
-    multilocation = { 
-      parents: 1, 
-      interior: { 
-        X2: [
-          { Parachain: parachainId }, 
-          { AccountId32: { network: 'Any', id: account } 
-        }] 
-      }
-    };
-  }
+  // Create a multilocation object based on the target parachain's account type
+  const isEthereum = ETHEREUM_ACCOUNT_PARACHAINS.includes(parachainId);
+  let multilocation = {
+    parents: 1,
+    interior: {
+      X2: [
+        { Parachain: parachainId },
+        isEthereum ?
+          { AccountKey20: { key: account } } :
+          { AccountId32: { id: account } }
+      ]
+    }
+  };
 
-  // Format objects as polkadotjs types
-  multilocation = registry.createType('MultiLocation', multilocation);
-  const userAction = new XcmRoutingUserAction({
-    destination: multilocation,
-  });
+  // Format multilocation object as a Polkadot.js type
+  const destination = registry.createType('MultiLocation', multilocation);
+
+  // Wrap and format the MultiLocation object into the precompile's input type
+  const userAction = new XcmRoutingUserAction({ destination });
   const versionedUserAction = new VersionedUserAction({ V1: userAction });
   console.log("Versioned User Action JSON:", versionedUserAction.toJSON());
   console.log("Versioned User Action SCALE:", versionedUserAction.toHex());
 
-  // SCALE encode
+  // SCALE encode resultant precompile formatted objects
   return versionedUserAction.toU8a();
 }

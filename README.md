@@ -9,6 +9,7 @@ npm start
 
 - The code related to creating payloads from a Wormhole chain to a Parachain is within `MoonbeamRoutedLiquidityPayloads.ts`. 
 - The code related to Polkadot wallets is within `PolkadotConnector.tsx`.
+- The code related to reading events on destination parachains is within `MonitorParachain.ts`
 
 ## TODO
 

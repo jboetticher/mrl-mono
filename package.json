@@ -25,7 +25,7 @@
     "@near-wallet-selector/near-wallet": "^7.0.1",
     "@near-wallet-selector/nightly": "^7.0.1",
     "@near-wallet-selector/sender": "^7.0.1",
-    "@polkadot/api": "^10.7.1",
+    "@polkadot/api": "10.2.1",
     "@polkadot/types": "^10.2.1",
     "@polkadot/util": "^11.1.2",
     "@polkadot/util-crypto": "^11.1.2",

@@ -31,7 +31,8 @@ export const ETHEREUM_ACCOUNT_PARACHAINS = [
 /**List of parachains that use substrate (32) accounts */
 export const SUBSTRATE_ACCOUNT_PARACHAINS = [
   Parachain.Interlay,
-  Parachain.HydraDX
+  Parachain.HydraDX,
+  Parachain.Manta
 ];
 
 /**The Uint8Array format of the MRL precompile */

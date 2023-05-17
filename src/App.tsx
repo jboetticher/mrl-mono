@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { CHAINS, transferFromEth, transferFromEthNative, approveEth } from "@certusone/wormhole-sdk";
+// React components & structure
+import { useState, useEffect } from "react";
 import {
-  Container, Typography, Button, Box, Card, CardContent,
+  Container, Typography, Button, Box, Card, CardContent, Snackbar, Alert,
   FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, TextField
 } from "@mui/material";
-import createMRLPayload, { MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE, Parachain, ETHEREUM_ACCOUNT_PARACHAINS } from "./MoonbeamRoutedLiquidityPayloads";
+
+// DApp
 import { FantomTestnet, useEtherBalance, useEthers } from '@usedapp/core'
 import { parseEther } from '@ethersproject/units'
 import { providers } from 'ethers'
+
+// Interactivity
+import { CHAINS, transferFromEth, transferFromEthNative, approveEth } from "@certusone/wormhole-sdk";
+import createMRLPayload, { MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE, Parachain, ETHEREUM_ACCOUNT_PARACHAINS } from "./MoonbeamRoutedLiquidityPayloads";
+import MonitorParachain from "./MonitorParachain";
 import PolkadotConnector from "./PolkadotConnector";
 
 enum Tokens {
@@ -24,10 +30,13 @@ export default function App() {
   const [selectedNetwork, setSelectedNetwork] = useState(Parachain.MoonbaseBeta);
   const [selectedToken, setSelectedToken] = useState<Tokens>(Tokens.FTM);
   const [acc32, setAcc32] = useState("");
+  const [snackOpen, setSnackOpen] = useState(false);
+  const [snackMessage, setSnackMessage] = useState("");
 
   const ParachainEntries = Object.entries(Parachain);
   const isEthereumStyledParachain = (x: Parachain) => ETHEREUM_ACCOUNT_PARACHAINS.includes(x);
 
+  // Callback to send an MRL transaction
   async function handleXCMTransfer() {
     if (account === undefined) {
       alert("No account connected!");
@@ -66,8 +75,19 @@ export default function App() {
         );
         break;
     }
+
+    // Monitor parachain
+    await MonitorParachain(
+      selectedNetwork,
+      isEthereumStyledParachain(selectedNetwork) ? account : acc32,
+      (message) => {
+        setSnackOpen(true);
+        setSnackMessage("Transaction finished! " + message)
+      }
+    );
   }
 
+  // Callback to send an approve message for USDC
   async function handleUSDCApprove() {
     if (account === undefined) {
       alert("No account connected!");
@@ -159,6 +179,16 @@ export default function App() {
           {chainId !== FantomTestnet.chainId && <p>Ensure that you are connected to the Fantom Testnet.</p>}
           <ConnectButton />
           <AddNetworkButton />
+          <Snackbar
+            open={snackOpen}
+            autoHideDuration={6000}
+            onClose={() => setSnackOpen(false)}
+            message={snackMessage}
+          >
+            <Alert onClose={() => setSnackOpen(false)} severity="success" sx={{ width: '100%' }}>
+              {snackMessage}
+            </Alert>
+          </Snackbar>
         </CardContent>
       </Card>
     </Container>
@@ -182,7 +212,7 @@ const AddNetworkButton = () => {
   )
   else return (
     <Box position="absolute" top={20} right={230}>
-      <Button variant="contained" onClick={() => window.open('https://faucet.fantom.network/','_blank')}>
+      <Button variant="contained" onClick={() => window.open('https://faucet.fantom.network/', '_blank')}>
         Go to Faucet
       </Button>
     </Box>

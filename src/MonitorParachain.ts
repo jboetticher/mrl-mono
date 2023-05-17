@@ -1,5 +1,7 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Parachain } from './MoonbeamRoutedLiquidityPayloads';
+import { u8aToHex } from '@polkadot/util';
+import { decodeAddress } from '@polkadot/util-crypto';
 
 /*
 README: So, you want to read events?
@@ -30,7 +32,7 @@ export const PARACHAIN_WSS = {
  * @param account The account we should be monitoring for asset issuance
  * @param onFound A callback function with a message string
  */
-export default async function MonitorParachain(parachain: Parachain, account: String, onFound: (message: string) => void) {
+export default async function MonitorParachain(parachain: Parachain, account: string, onFound: (message: string) => void) {
   // Create our API with a default connection to the local node
   const provider = new WsProvider(PARACHAIN_WSS[parachain]);
   const api = await ApiPromise.create({ provider });
@@ -44,21 +46,44 @@ export default async function MonitorParachain(parachain: Parachain, account: St
     for (let record of events) {
       const { event } = record;
 
-      // Filter for the 'Issued' event, which indicates that assets were minted
-      console.log("Event Method: ", event.method);
-      if (event.method !== 'Issued') continue;
-
-      console.log('AccountId20:', event.data.owner.toString(), 'Connected:', account)
-      console.log(event.data);
-
       /* 
       Here we are only filtering to ensure that some sort of token was sent to the user specified.
       If you wanted to also filter for the asset type, you would have to either:
       1. Maintain a list of asset ID => Multilocations
       2. Maintain a query & subsequent logic per parachain that would help decipher if an asset ID => Multilocation
       */
-      if (event.data.owner.toString() == account) {
-        onFound(event.data[0] + ", " + event.data[1])
+
+      // This works for Moonbase Beta
+      if (parachain === Parachain.MoonbaseBeta) {
+        // Filter for the 'Issued' event, which indicates that assets were minted
+        console.log("Event Method: ", event.method);
+        if (event.method !== 'Issued') continue;
+
+        // Print data for debug purposes
+        console.log('AccountId20:', event.data.owner.toString(), 'Connected:', account)
+        console.log(event.data);
+
+        // Check if destination account = account provided
+        if (event.data.owner.toString() === account) {
+          onFound(event.data[0] + ", " + event.data[1])
+        }
+      }
+
+      if (parachain === Parachain.Manta) {
+        // Filter for the 'Issued' event, which indicates that assets were minted
+        console.log("Event Method: ", event.method);
+        if (event.method !== 'Issued') continue;
+
+        // Normalize accounts to HEX, bc same accounts are represented differently on each parachain
+        const destAcc = u8aToHex(decodeAddress(account));
+        const eventAcc = u8aToHex(decodeAddress(event.data.owner.toString()));
+
+        console.log(destAcc === eventAcc, destAcc, eventAcc)
+
+        // Check if destination account = account provided
+        if (destAcc === eventAcc) {
+          onFound(event.data[0] + ", " + event.data[1])
+        }
       }
     };
   });

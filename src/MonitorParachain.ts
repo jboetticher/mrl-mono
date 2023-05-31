@@ -25,6 +25,16 @@ export const PARACHAIN_WSS = {
   [Parachain.MoonbaseBeta]: 'wss://frag-moonbase-beta-rpc-ws.g.moonbase.moonbeam.network',
 }
 
+export enum Tokens {
+  FTM,
+  USDC
+}
+
+const MANTA_TOKENS = {
+  [Tokens.FTM]: '9',
+  [Tokens.USDC]: '8',
+}
+
 /**
  * Monitors asset issuance events on a parachain to react in the frontend with
  * 
@@ -32,13 +42,13 @@ export const PARACHAIN_WSS = {
  * @param account The account we should be monitoring for asset issuance
  * @param onFound A callback function with a message string
  */
-export default async function MonitorParachain(parachain: Parachain, account: string, onFound: (message: string) => void) {
+export default async function MonitorParachain(parachain: Parachain, account: string, token: Tokens, onFound: (message: string) => void) {
   // Create our API with a default connection to the local node
   const provider = new WsProvider(PARACHAIN_WSS[parachain]);
   const api = await ApiPromise.create({ provider });
 
   // Subscribe to system events via storage
-  api.query.system.events((events: any[]) => {
+  let unsub = api.query.system.events((events: any[]) => {
     console.log(`\nReceived ${events.length} events:`);
     console.log(events)
 
@@ -74,6 +84,9 @@ export default async function MonitorParachain(parachain: Parachain, account: st
         console.log("Event Method: ", event.method);
         if (event.method !== 'Issued') continue;
 
+        // Filter for the asset type, which is hardcoded into the SDK
+        if(event.data.assetId.toString() !== MANTA_TOKENS[token]) continue;
+
         // Normalize accounts to HEX, bc same accounts are represented differently on each parachain
         const destAcc = u8aToHex(decodeAddress(account));
         const eventAcc = u8aToHex(decodeAddress(event.data.owner.toString()));
@@ -82,8 +95,17 @@ export default async function MonitorParachain(parachain: Parachain, account: st
 
         // Check if destination account = account provided
         if (destAcc === eventAcc) {
+          console.log('what is unsub? ', unsub)
+          // @ts-ignore
+          if (!!unsub) unsub();
           onFound(event.data[0] + ", " + event.data[1])
         }
+
+
+      }
+
+      if (parachain === Parachain.HydraDX) {
+        
       }
     };
   });

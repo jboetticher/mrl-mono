@@ -13,13 +13,8 @@ import { providers } from 'ethers'
 // Interactivity
 import { CHAINS, transferFromEth, transferFromEthNative, approveEth } from "@certusone/wormhole-sdk";
 import createMRLPayload, { MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE, Parachain, ETHEREUM_ACCOUNT_PARACHAINS } from "./MoonbeamRoutedLiquidityPayloads";
-import MonitorParachain from "./MonitorParachain";
+import MonitorParachain, { Tokens } from "./MonitorParachain";
 import PolkadotConnector from "./PolkadotConnector";
-
-enum Tokens {
-  FTM,
-  USDC
-}
 
 const FANTOM_TESTNET_TOKEN_BRIDGE = "0x599CEa2204B4FaECd584Ab1F2b6aCA137a0afbE8";
 const FANTOM_TESTNET_USDC = "0xDF7928AF5B33F7de592594958D8d6Ff8472Eb407";
@@ -80,6 +75,7 @@ export default function App() {
     await MonitorParachain(
       selectedNetwork,
       isEthereumStyledParachain(selectedNetwork) ? account : acc32,
+      selectedToken,
       (message) => {
         setSnackOpen(true);
         setSnackMessage("Transaction finished! " + message)

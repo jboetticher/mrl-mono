@@ -11,7 +11,7 @@ class VersionedUserAction extends Enum {
 }
 class XcmRoutingUserAction extends Struct {
   constructor(value?: any) {
-    super(registry, { destination: 'MultiLocation' }, value);
+    super(registry, { destination: 'VersionedMultiLocation' }, value);
   }
 }
 
@@ -48,20 +48,24 @@ export default function createMRLPayload(parachainId: Parachain, account: string
   // Create a multilocation object based on the target parachain's account type
   const isEthereum = ETHEREUM_ACCOUNT_PARACHAINS.includes(parachainId);
   let multilocation = {
-    parents: 1,
-    interior: {
-      X2: [
-        { Parachain: parachainId },
-        isEthereum ?
-          { AccountKey20: { key: account } } :
-          { AccountId32: { id: account } }
-      ]
+    v1: {
+      parents: 1,
+      interior: {
+        X2: [
+          { Parachain: parachainId },
+          isEthereum ?
+            { AccountKey20: { key: account } } :
+            { AccountId32: { id: account } }
+        ]
+      }
     }
   };
 
   // Format multilocation object as a Polkadot.js type
-  const destination = registry.createType('MultiLocation', multilocation);
-
+  const destination = registry.createType(
+    "VersionedMultiLocation",
+    multilocation
+  );
   // Wrap and format the MultiLocation object into the precompile's input type
   const userAction = new XcmRoutingUserAction({ destination });
   const versionedUserAction = new VersionedUserAction({ V1: userAction });

@@ -40,47 +40,48 @@ export default function App() {
     const l = library as providers.JsonRpcProvider;
 
     // Create the payload that we will send over
-    let payload = createMRLPayload(selectedNetwork, isEthereumStyledParachain(selectedNetwork) ? account : acc32);
+    let payload = await createMRLPayload(selectedNetwork, isEthereumStyledParachain(selectedNetwork) ? account : acc32);
+    return;
 
-    // Transfer with payload
-    switch (selectedToken) {
-      case Tokens.FTM:
-        transferFromEthNative(
-          FANTOM_TESTNET_TOKEN_BRIDGE,
-          l.getSigner(),
-          parseEther("0.1"),
-          CHAINS.moonbeam,
-          MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
-          0, // relayerFee, doesn't matter because it's contract controlled
-          undefined,
-          payload
-        );
-        break;
-      case Tokens.USDC:
-        transferFromEth(
-          FANTOM_TESTNET_TOKEN_BRIDGE,
-          l.getSigner(),
-          FANTOM_TESTNET_USDC,
-          "500000",
-          CHAINS.moonbeam,
-          MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
-          0,
-          undefined,
-          payload
-        );
-        break;
-    }
+    // // Transfer with payload
+    // switch (selectedToken) {
+    //   case Tokens.FTM:
+    //     transferFromEthNative(
+    //       FANTOM_TESTNET_TOKEN_BRIDGE,
+    //       l.getSigner(),
+    //       parseEther("0.1"),
+    //       CHAINS.moonbeam,
+    //       MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
+    //       0, // relayerFee, doesn't matter because it's contract controlled
+    //       undefined,
+    //       payload
+    //     );
+    //     break;
+    //   case Tokens.USDC:
+    //     transferFromEth(
+    //       FANTOM_TESTNET_TOKEN_BRIDGE,
+    //       l.getSigner(),
+    //       FANTOM_TESTNET_USDC,
+    //       "500000",
+    //       CHAINS.moonbeam,
+    //       MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
+    //       0,
+    //       undefined,
+    //       payload
+    //     );
+    //     break;
+    // }
 
-    // Monitor parachain
-    await MonitorParachain(
-      selectedNetwork,
-      isEthereumStyledParachain(selectedNetwork) ? account : acc32,
-      selectedToken,
-      (message) => {
-        setSnackOpen(true);
-        setSnackMessage("Transaction finished! " + message)
-      }
-    );
+    // // Monitor parachain
+    // await MonitorParachain(
+    //   selectedNetwork,
+    //   isEthereumStyledParachain(selectedNetwork) ? account : acc32,
+    //   selectedToken,
+    //   (message) => {
+    //     setSnackOpen(true);
+    //     setSnackMessage("Transaction finished! " + message)
+    //   }
+    // );
   }
 
   // Callback to send an approve message for USDC

@@ -18,6 +18,7 @@ import PolkadotConnector from "./PolkadotConnector";
 
 const FANTOM_TESTNET_TOKEN_BRIDGE = "0x599CEa2204B4FaECd584Ab1F2b6aCA137a0afbE8";
 const FANTOM_TESTNET_USDC = "0xDF7928AF5B33F7de592594958D8d6Ff8472Eb407";
+const AMOUNT = "3";
 
 export default function App() {
   const { account, library, chainId } = useEthers();
@@ -48,7 +49,7 @@ export default function App() {
         transferFromEthNative(
           FANTOM_TESTNET_TOKEN_BRIDGE,
           l.getSigner(),
-          parseEther("0.1"),
+          parseEther(AMOUNT),
           CHAINS.moonbeam,
           MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
           0, // relayerFee, doesn't matter because it's contract controlled
@@ -147,7 +148,7 @@ export default function App() {
     );
   }
 
-  const sendingAmount = selectedToken === Tokens.FTM ? '0.1' : '0.5';
+  const sendingAmount = selectedToken === Tokens.FTM ? AMOUNT : '0.5';
 
   return (
     <Container maxWidth="md" style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>

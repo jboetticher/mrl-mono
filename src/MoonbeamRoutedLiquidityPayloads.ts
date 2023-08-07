@@ -47,6 +47,7 @@ export const MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE = tryNativeToUint8Array("0x000
 export default function createMRLPayload(parachainId: Parachain, account: string): Uint8Array {
   // Create a multilocation object based on the target parachain's account type
   const isEthereum = ETHEREUM_ACCOUNT_PARACHAINS.includes(parachainId);
+  console.log("parachain: ", parachainId)
   let multilocation = {
     v1: {
       parents: 1,
@@ -60,7 +61,7 @@ export default function createMRLPayload(parachainId: Parachain, account: string
       }
     }
   };
-
+  
   // Format multilocation object as a Polkadot.js type
   const destination = registry.createType(
     "VersionedMultiLocation",

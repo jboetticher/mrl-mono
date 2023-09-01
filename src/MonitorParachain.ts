@@ -27,12 +27,12 @@ export const PARACHAIN_WSS = {
 
 export enum Tokens {
   FTM,
-  USDC
+  WETH
 }
 
 const MANTA_TOKENS = {
   [Tokens.FTM]: '9',
-  [Tokens.USDC]: '8',
+  [Tokens.WETH]: '8',
 }
 
 /**

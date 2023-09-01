@@ -6,7 +6,7 @@ import {
 } from "@mui/material";
 
 // DApp
-import { FantomTestnet, useEtherBalance, useEthers } from '@usedapp/core'
+import { Fantom, useEtherBalance, useEthers } from '@usedapp/core'
 import { parseEther } from '@ethersproject/units'
 import { providers } from 'ethers'
 
@@ -16,9 +16,9 @@ import createMRLPayload, { MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE, Parachain, ETHE
 import MonitorParachain, { Tokens } from "./MonitorParachain";
 import PolkadotConnector from "./PolkadotConnector";
 
-const FANTOM_TESTNET_TOKEN_BRIDGE = "0x599CEa2204B4FaECd584Ab1F2b6aCA137a0afbE8";
-const FANTOM_TESTNET_USDC = "0xDF7928AF5B33F7de592594958D8d6Ff8472Eb407";
-const AMOUNT = "3";
+const FANTOM_TESTNET_TOKEN_BRIDGE = "0x7C9Fc5741288cDFdD83CeB07f3ea7e22618D79D2";
+const FANTOM_TESTNET_WETH = "0x2A126f043BDEBe5A0A9841c51915E562D9B07289";
+const AMOUNT = "0.008";
 
 export default function App() {
   const { account, library, chainId } = useEthers();
@@ -57,12 +57,12 @@ export default function App() {
           payload
         );
         break;
-      case Tokens.USDC:
+      case Tokens.WETH:
         transferFromEth(
           FANTOM_TESTNET_TOKEN_BRIDGE,
           l.getSigner(),
-          FANTOM_TESTNET_USDC,
-          "500000",
+          FANTOM_TESTNET_WETH,
+          parseEther(AMOUNT),
           CHAINS.moonbeam,
           MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
           0,
@@ -85,13 +85,13 @@ export default function App() {
   }
 
   // Callback to send an approve message for USDC
-  async function handleUSDCApprove() {
+  async function handleWETHApprove() {
     if (account === undefined) {
       alert("No account connected!");
       return;
     }
     const l = library as providers.JsonRpcProvider;
-    approveEth(FANTOM_TESTNET_TOKEN_BRIDGE, FANTOM_TESTNET_USDC, l.getSigner(), "500000");
+    approveEth(FANTOM_TESTNET_TOKEN_BRIDGE, FANTOM_TESTNET_WETH, l.getSigner(), parseEther(AMOUNT));
   }
 
   function SendTokensForm() {
@@ -148,7 +148,8 @@ export default function App() {
     );
   }
 
-  const sendingAmount = selectedToken === Tokens.FTM ? AMOUNT : '0.5';
+  const sendingAmount = selectedToken === Tokens.FTM ? AMOUNT : '0.002';
+  console.log(Fantom.chainId, chainId)
 
   return (
     <Container maxWidth="md" style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -158,22 +159,22 @@ export default function App() {
             Wormhole Network Selector
           </Typography>
           <Typography variant="h6" gutterBottom textAlign='center'>
-            Transfer {sendingAmount} {Tokens[selectedToken]} from <b>Fantom Testnet</b> ► Moonbase Alpha ► {ParachainEntries.find(([k, v]) => v === selectedNetwork)?.[0]}
+            Transfer {sendingAmount} {Tokens[selectedToken]} from <b>Fantom Opera</b> ► Moonbeam ► {ParachainEntries.find(([k, v]) => v === selectedNetwork)?.[0]}
           </Typography>
           <SendTokensForm />
-          {etherBalance && (
-            <Box display="flex" justifyContent="space-evenly" alignItems="center">
-              {selectedToken !== Tokens.FTM &&
-                <Button variant="contained" onClick={handleUSDCApprove}>
-                  Approve Token
-                </Button>
-              }
-              <Button variant="contained" onClick={handleXCMTransfer}>
-                Click to Transfer
+          {/* {etherBalance && ( */}
+          <Box display="flex" justifyContent="space-evenly" alignItems="center">
+            {selectedToken !== Tokens.FTM &&
+              <Button variant="contained" onClick={handleWETHApprove}>
+                Approve Token
               </Button>
-            </Box>
-          )}
-          {chainId !== FantomTestnet.chainId && <p>Ensure that you are connected to the Fantom Testnet.</p>}
+            }
+            <Button variant="contained" onClick={handleXCMTransfer}>
+              Click to Transfer
+            </Button>
+          </Box>
+          {/* )} */}
+          {/* {chainId !== Fantom.chainId && <p>Ensure that you are connected to Fantom Opera.</p>} */}
           <ConnectButton />
           <AddNetworkButton />
           <Snackbar
@@ -197,12 +198,12 @@ const AddNetworkButton = () => {
   const { switchNetwork, chainId } = useEthers()
 
   useEffect(() => {
-    if (chainId && chainId !== FantomTestnet.chainId) { switchNetwork(FantomTestnet.chainId); }
+    if (chainId && chainId !== Fantom.chainId) { switchNetwork(Fantom.chainId); }
   }, [chainId, switchNetwork]);
 
-  if (chainId !== FantomTestnet.chainId) return (
+  if (chainId !== Fantom.chainId) return (
     <Box position="absolute" top={20} right={230}>
-      <Button variant="contained" onClick={() => switchNetwork(FantomTestnet.chainId)}>
+      <Button variant="contained" onClick={() => switchNetwork(Fantom.chainId)}>
         Switch to Fantom
       </Button>
     </Box>

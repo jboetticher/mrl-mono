@@ -17,7 +17,7 @@ import MonitorParachain, { Tokens } from "./MonitorParachain";
 import PolkadotConnector from "./PolkadotConnector";
 
 const FANTOM_TESTNET_TOKEN_BRIDGE = "0x599CEa2204B4FaECd584Ab1F2b6aCA137a0afbE8";
-const FANTOM_TESTNET_USDC = "0xDF7928AF5B33F7de592594958D8d6Ff8472Eb407";
+const FANTOM_TESTNET_MANTA = "0x04f4670D817B21b652FC51ea0f4f74836D7f6db5";
 const AMOUNT = "3";
 
 export default function App() {
@@ -57,12 +57,12 @@ export default function App() {
           payload
         );
         break;
-      case Tokens.USDC:
+      case Tokens.MANTA:
         transferFromEth(
           FANTOM_TESTNET_TOKEN_BRIDGE,
           l.getSigner(),
-          FANTOM_TESTNET_USDC,
-          "500000",
+          FANTOM_TESTNET_MANTA,
+          "5000000000000000000",
           CHAINS.moonbeam,
           MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
           0,
@@ -84,14 +84,14 @@ export default function App() {
     );
   }
 
-  // Callback to send an approve message for USDC
-  async function handleUSDCApprove() {
+  // Callback to send an approve message for MANTA
+  async function handleMANTAApprove() {
     if (account === undefined) {
       alert("No account connected!");
       return;
     }
     const l = library as providers.JsonRpcProvider;
-    approveEth(FANTOM_TESTNET_TOKEN_BRIDGE, FANTOM_TESTNET_USDC, l.getSigner(), "500000");
+    approveEth(FANTOM_TESTNET_TOKEN_BRIDGE, FANTOM_TESTNET_MANTA, l.getSigner(), "5000000000000000000");
   }
 
   function SendTokensForm() {
@@ -164,7 +164,7 @@ export default function App() {
           {etherBalance && (
             <Box display="flex" justifyContent="space-evenly" alignItems="center">
               {selectedToken !== Tokens.FTM &&
-                <Button variant="contained" onClick={handleUSDCApprove}>
+                <Button variant="contained" onClick={handleMANTAApprove}>
                   Approve Token
                 </Button>
               }

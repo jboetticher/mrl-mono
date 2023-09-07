@@ -85,6 +85,12 @@ export default async function createMRLPayload(parachainId: Parachain, account: 
   console.log("Versioned User Action JSON:", versionedUserAction.toJSON());
   console.log("Versioned User Action SCALE:", versionedUserAction.toHex());
 
+  // Uses this hack, because .toU8a() encodes IMPROPERLY by omitting the first 0 whereas .toHex() does not
+  //@ts-ignore
+  const fromHexString = (hexString) =>  Uint8Array.from(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+
   // SCALE encode resultant precompile formatted objects
-  return userAction.toU8a();
+  return fromHexString(userAction.toHex()); // userAction.toU8a();
 }
+
+

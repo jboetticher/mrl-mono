@@ -69,20 +69,22 @@ export default async function createMRLPayload(parachainId: Parachain, account: 
     provider: wsProvider, types: {
       [MRLTypes.XcmRoutingUserAction]: { destination: MRLTypes.XcmVersionedMultiLocation },
       [MRLTypes.XcmRoutingUserActionWithFee]: { destination: MRLTypes.XcmVersionedMultiLocation, fee: 'u256' },
-      // [MRLTypes.VersionedUserAction]: { _enum: { V1: MRLTypes.XcmRoutingUserAction, V2: MRLTypes.XcmRoutingUserActionWithFee } }
-      [MRLTypes.VersionedUserAction]: { V1: MRLTypes.XcmRoutingUserAction }
+      [MRLTypes.VersionedUserAction]: { _enum: { V1: MRLTypes.XcmRoutingUserAction, V2: MRLTypes.XcmRoutingUserActionWithFee } }
+      // [MRLTypes.VersionedUserAction]: { V1: MRLTypes.XcmRoutingUserAction }
     }
   });
 
   // Format multilocation object as a Polkadot.js type
   const versionedMultilocation = api.createType(MRLTypes.XcmVersionedMultiLocation, multilocation);
-  const routingUserAction = api.createType(MRLTypes.XcmRoutingUserAction, { destination: versionedMultilocation });
+  console.log("versioned multilocation", versionedMultilocation.toHex())
+  const userAction = api.createType(MRLTypes.XcmRoutingUserAction, { destination: versionedMultilocation });
+  console.log("user action", userAction.toHex())
 
   // Wrap and format the MultiLocation object into the precompile's input type
-  const versionedUserAction = api.createType(MRLTypes.VersionedUserAction, { V2: routingUserAction });
+  const versionedUserAction = api.createType(MRLTypes.VersionedUserAction, { V1: userAction });
   console.log("Versioned User Action JSON:", versionedUserAction.toJSON());
   console.log("Versioned User Action SCALE:", versionedUserAction.toHex());
 
   // SCALE encode resultant precompile formatted objects
-  return routingUserAction.toU8a();
+  return userAction.toU8a();
 }

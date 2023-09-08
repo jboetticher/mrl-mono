@@ -16,6 +16,9 @@ const theme = createTheme({
     },
     secondary: {
       main: 'rgb(225, 20, 123)'
+    },
+    text: {
+      primary: '#C1C2C5'
     }
   },
   components: {
@@ -23,7 +26,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: 'rgb(37, 38, 43)',
-          color: '#C1C2C5'
+          // color: '#C1C2C5'
         },
       }
     },
@@ -33,7 +36,14 @@ const theme = createTheme({
           marginBottom: '2rem'
         }
       }
-    }
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          color: '#C1C2C5'
+        }
+      },
+    },
   }
 });
 

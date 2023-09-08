@@ -40,8 +40,24 @@ const theme = createTheme({
     MuiTab: {
       styleOverrides: {
         root: {
-          color: '#C1C2C5'
+          color: '#C1C2C5',
+          fontWeight: 700
         }
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          fontWeight: 'bold'
+        }
+      }
+    },
+    MuiDivider: {
+      styleOverrides: {
+        root: {
+          borderColor: 'rgba(100, 208, 206, 0.12)', 
+          marginBottom: '1rem'
+        },
       },
     },
   }
@@ -57,7 +73,7 @@ const config: Config = {
 ReactDOM.render(
   <React.StrictMode>
     <DAppProvider config={config}>
-      <img src='moonbeam-bg.webp' className='bg-img' />
+      <img src='moonbeam-bg.webp' alt="moonbeam nebulous background" className='bg-img' />
       <ThemeProvider theme={theme}>
         <App />
       </ThemeProvider>

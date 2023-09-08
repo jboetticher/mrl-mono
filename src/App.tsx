@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import {
   Container, Typography, Button, Box, Card, CardContent, Snackbar, Alert,
-  FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, TextField
+  FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, TextField,
+  Grid, Tabs, Tab
 } from "@mui/material";
 
 // DApp
@@ -28,6 +29,8 @@ export default function App() {
   const [acc32, setAcc32] = useState("");
   const [snackOpen, setSnackOpen] = useState(false);
   const [snackMessage, setSnackMessage] = useState("");
+  const [selectedTab, setSelectedTab] = useState(0);
+  console.log(selectedTab)
 
   const ParachainEntries = Object.entries(Parachain);
   const isEthereumStyledParachain = (x: Parachain) => ETHEREUM_ACCOUNT_PARACHAINS.includes(x);
@@ -150,47 +153,80 @@ export default function App() {
 
   const sendingAmount = selectedToken === Tokens.FTM ? AMOUNT : '0.5';
 
-  return (
-    <Container maxWidth="md" style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-      <Card style={{ width: '100%', borderRadius: 15, overflow: 'hidden' }}>
-        <CardContent>
-          <Typography variant="h4" gutterBottom textAlign='center'>
-            Wormhole Network Selector
-          </Typography>
-          <Typography variant="h6" gutterBottom textAlign='center'>
-            Transfer {sendingAmount} {Tokens[selectedToken]} from <b>Fantom Testnet</b> ► Moonbase Alpha ► {ParachainEntries.find(([k, v]) => v === selectedNetwork)?.[0]}
-          </Typography>
-          <SendTokensForm />
-          {etherBalance && (
-            <Box display="flex" justifyContent="space-evenly" alignItems="center">
-              {selectedToken !== Tokens.FTM &&
-                <Button variant="contained" onClick={handleMANTAApprove}>
-                  Approve Token
-                </Button>
-              }
-              <Button variant="contained" onClick={handleXCMTransfer}>
-                Click to Transfer
+  function tabSwitchResult() {
+    switch (selectedTab) {
+      case 0: return <>
+        <Typography variant="h4" gutterBottom textAlign='center'>
+          Wormhole Network Selector
+        </Typography>
+        <Typography variant="h6" gutterBottom textAlign='center'>
+          Transfer {sendingAmount} {Tokens[selectedToken]} from <b>Fantom Testnet</b> ► Moonbase Alpha ► {ParachainEntries.find(([k, v]) => v === selectedNetwork)?.[0]}
+        </Typography>
+        <SendTokensForm />
+        {etherBalance && (
+          <Box display="flex" justifyContent="space-evenly" alignItems="center">
+            {selectedToken !== Tokens.FTM &&
+              <Button variant="contained" onClick={handleMANTAApprove}>
+                Approve Token
               </Button>
-            </Box>
-          )}
-          {chainId !== FantomTestnet.chainId && <p>Ensure that you are connected to the Fantom Testnet.</p>}
-          <ConnectButton />
-          <AddNetworkButton />
-          <Snackbar
-            open={snackOpen}
-            autoHideDuration={6000}
-            onClose={() => setSnackOpen(false)}
-            message={snackMessage}
-          >
-            <Alert onClose={() => setSnackOpen(false)} severity="success" sx={{ width: '100%' }}>
-              {snackMessage}
-            </Alert>
-          </Snackbar>
-        </CardContent>
-      </Card>
-    </Container>
-  );
+            }
+            <Button variant="contained" onClick={handleXCMTransfer}>
+              Click to Transfer
+            </Button>
+          </Box>
+        )}
+        {chainId !== FantomTestnet.chainId && <p>Ensure that you are connected to the Fantom Testnet.</p>}
+      </>;
+      default: return <>
+        <div>
+          AMONGUS
+        </div>
+      </>
+    }
+  }
 
+  return (
+    <>
+      <Grid container style={{
+        margin: '4rem', // Adjust the margin around the cards as needed
+        height: 'calc(100vh - 8rem)', // Adjusting for the margin
+        width: 'calc(100% - 8rem)', // Subtracting the total horizontal margin (4rem on each side)
+        boxSizing: 'border-box'
+      }} spacing={3}>
+        <Grid item xs={3}>
+          <Card style={{ marginBottom: '2rem' }}>
+            <CardContent>Card 1</CardContent>
+          </Card>
+          <Card>
+            <CardContent>Card 2</CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={9}>
+          <Card style={{ height: '100%' }}>
+            <CardContent>
+              <Tabs value={selectedTab} onChange={(event, newValue) => setSelectedTab(newValue)}>
+                <Tab label="TestNet" />
+                <Tab label="About" />
+              </Tabs>
+              {tabSwitchResult()}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+      <ConnectButton />
+      <AddNetworkButton />
+      <Snackbar
+        open={snackOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackOpen(false)}
+        message={snackMessage}
+      >
+        <Alert onClose={() => setSnackOpen(false)} severity="success" sx={{ width: '100%' }}>
+          {snackMessage}
+        </Alert>
+      </Snackbar>
+    </>
+  )
 };
 
 const AddNetworkButton = () => {

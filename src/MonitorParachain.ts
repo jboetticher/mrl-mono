@@ -37,7 +37,7 @@ const MANTA_TOKENS = {
 
 const INTERLAY_TOKENS = {
   [Tokens.FTM]: '{"foreignAsset":2}',
-  [Tokens.USDC]: '-1'
+  [Tokens.MANTA]: '-1'
 }
 
 /**

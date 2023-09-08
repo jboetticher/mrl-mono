@@ -41,7 +41,7 @@ export default function App() {
     const l = library as providers.JsonRpcProvider;
 
     // Create the payload that we will send over
-    let payload = createMRLPayload(selectedNetwork, isEthereumStyledParachain(selectedNetwork) ? account : acc32);
+    let payload = await createMRLPayload(selectedNetwork, isEthereumStyledParachain(selectedNetwork) ? account : acc32);
 
     // Transfer with payload
     switch (selectedToken) {

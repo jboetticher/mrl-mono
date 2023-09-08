@@ -19,7 +19,7 @@ There will likely be issues with conflicting transfers to the same account in th
 */
 
 export const PARACHAIN_WSS = {
-  [Parachain.Interlay]: '',
+  [Parachain.Interlay]: 'wss://interlay-moonbeam-alphanet.interlay.io/parachain',
   [Parachain.HydraDX]: 'wss://hydradx-moonbase-rpc.play.hydration.cloud',
   [Parachain.Manta]: 'wss://c1.manta.moonsea.systems',
   [Parachain.MoonbaseBeta]: 'wss://frag-moonbase-beta-rpc-ws.g.moonbase.moonbeam.network',
@@ -33,6 +33,11 @@ export enum Tokens {
 const MANTA_TOKENS = {
   [Tokens.FTM]: '9',
   [Tokens.MANTA]: '8',
+}
+
+const INTERLAY_TOKENS = {
+  [Tokens.FTM]: '{"foreignAsset":2}',
+  [Tokens.USDC]: '-1'
 }
 
 /**
@@ -85,7 +90,7 @@ export default async function MonitorParachain(parachain: Parachain, account: st
         if (event.method !== 'Issued') continue;
 
         // Filter for the asset type, which is hardcoded into the SDK
-        if(event.data.assetId.toString() !== MANTA_TOKENS[token]) continue;
+        if (event.data.assetId.toString() !== MANTA_TOKENS[token]) continue;
 
         // Normalize accounts to HEX, bc same accounts are represented differently on each parachain
         const destAcc = u8aToHex(decodeAddress(account));
@@ -100,12 +105,54 @@ export default async function MonitorParachain(parachain: Parachain, account: st
           if (!!unsub) unsub();
           onFound(event.data[0] + ", " + event.data[1])
         }
-
-
       }
 
+      // TODO (HydraDX stalled)
       if (parachain === Parachain.HydraDX) {
-        
+        // Filter for the 'Issued' event, which indicates that assets were minted
+        console.log("Event Method: ", event.method);
+        if (event.method !== 'Issued') continue;
+
+        // Filter for the asset type, which is hardcoded into the SDK
+        if (event.data.assetId.toString() !== MANTA_TOKENS[token]) continue;
+
+        // Normalize accounts to HEX, bc same accounts are represented differently on each parachain
+        const destAcc = u8aToHex(decodeAddress(account));
+        const eventAcc = u8aToHex(decodeAddress(event.data.owner.toString()));
+
+        console.log(destAcc === eventAcc, destAcc, eventAcc)
+
+        // Check if destination account = account provided
+        if (destAcc === eventAcc) {
+          console.log('what is unsub? ', unsub)
+          // @ts-ignore
+          if (!!unsub) unsub();
+          onFound(event.data[0] + ", " + event.data[1])
+        }
+      }
+
+      // TODO
+      if (parachain === Parachain.Interlay) {
+        // Filter for the 'Deposited' event, which indicates that assets were transfered
+        console.log("Event Method: ", event.method);
+        if (event.method !== 'Deposited') continue;
+
+        // Print data for debug purposes
+        console.log(event.data);
+
+        // Normalize accounts to HEX, bc same accounts are represented differently on each parachain
+        const destAcc = u8aToHex(decodeAddress(account));
+        const eventAcc = u8aToHex(decodeAddress(event.data.who.toString()));
+        console.log("Token: ", event.data.currencyId.toString(), INTERLAY_TOKENS[token], event.data.currencyId.toString() !== INTERLAY_TOKENS[token]);
+        console.log("Who: ", destAcc, eventAcc, destAcc === eventAcc);
+
+        // Filter for the asset type, which is hardcoded into the SDK
+        if (event.data.currencyId.toString() !== INTERLAY_TOKENS[token]) continue;
+
+        // Check if destination account = account provided
+        if (destAcc === eventAcc) {
+          onFound(event.data[0] + ", " + event.data[1])
+        }
       }
     };
   });

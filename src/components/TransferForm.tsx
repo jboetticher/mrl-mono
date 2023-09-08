@@ -22,9 +22,9 @@ const FANTOM_TESTNET_TOKEN_BRIDGE = "0x599CEa2204B4FaECd584Ab1F2b6aCA137a0afbE8"
 const FANTOM_TESTNET_MANTA = "0x04f4670D817B21b652FC51ea0f4f74836D7f6db5";
 const AMOUNT = "3";
 
-type TransferFormProps = { 
-  setSnackOpen: (open: boolean) => void, 
-  setSnackMessage: (msg: string) => void 
+type TransferFormProps = {
+  setSnackOpen: (open: boolean) => void,
+  setSnackMessage: (msg: string) => void
 };
 
 export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
@@ -32,6 +32,7 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
   const etherBalance = useEtherBalance(account)
   const [selectedNetwork, setSelectedNetwork] = useState(Parachain.MoonbaseBeta);
   const [selectedToken, setSelectedToken] = useState<Tokens>(Tokens.FTM);
+  const [amount, setAmount] = useState(0.0);
   const [acc32, setAcc32] = useState("");
 
   const ParachainEntries = Object.entries(Parachain);
@@ -101,26 +102,20 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
 
   const sendingAmount = selectedToken === Tokens.FTM ? AMOUNT : '0.5';
 
-
-  function SendTokensForm() {
-    return (
-      <Box>
-        <FormControl fullWidth variant="outlined" style={{ marginBottom: 12 }}>
-          <InputLabel htmlFor="network">Select a Network</InputLabel>
-          <Select
-            value={selectedNetwork}
-            onChange={(e: SelectChangeEvent<Parachain>) => setSelectedNetwork(e.target.value as Parachain)}
-            label="Select a Network"
-            inputProps={{ name: "network", id: "network" }}
-          >
-            {ParachainEntries.filter(x => isNaN(parseInt(x[0]))).map(x => (
-              <MenuItem key={x[0]} value={x[1]}>
-                {x[0]} ({ETHEREUM_ACCOUNT_PARACHAINS.includes(x[1] as Parachain) ? 'AccountKey20' : 'AccountId32'})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth variant="outlined" style={{ marginBottom: 12 }}>
+  return (
+    <>
+      <Typography variant="h4" textAlign='center'>
+        Moonbeam Routed Liquidity
+      </Typography>
+      <Typography gutterBottom textAlign='center'>
+        {"[FORWARD]"}
+      </Typography>
+      <Divider />
+      <DarkCard style={{ marginBottom: '1rem' }}>
+        <Typography gutterBottom textAlign='center'>
+          Token
+        </Typography>
+        <FormControl fullWidth variant="outlined">
           <InputLabel htmlFor="token">Select a Token</InputLabel>
           <Select
             value={selectedToken}
@@ -135,6 +130,29 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
                   {key}
                 </MenuItem>
               ))}
+          </Select>
+        </FormControl>
+        <FormControl fullWidth variant="outlined">
+          <TextField type="number" value={amount} label="Amount" onChange={(e) => setAmount(parseFloat(e.target.value))}></TextField>
+        </FormControl>
+      </DarkCard>
+      <DarkCard style={{ marginBottom: '1rem' }}>
+        <Typography gutterBottom textAlign='center'>
+          Origin & Destination
+        </Typography>
+        <FormControl fullWidth variant="outlined" style={{ marginBottom: 12 }}>
+          <InputLabel htmlFor="network">Select a Network</InputLabel>
+          <Select
+            value={selectedNetwork}
+            onChange={(e: SelectChangeEvent<Parachain>) => setSelectedNetwork(e.target.value as Parachain)}
+            label="Select a Network"
+            inputProps={{ name: "network", id: "network" }}
+          >
+            {ParachainEntries.filter(x => isNaN(parseInt(x[0]))).map(x => (
+              <MenuItem key={x[0]} value={x[1]}>
+                {x[0]} ({ETHEREUM_ACCOUNT_PARACHAINS.includes(x[1] as Parachain) ? 'AccountKey20' : 'AccountId32'})
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
         {!ETHEREUM_ACCOUNT_PARACHAINS.includes(selectedNetwork as Parachain) &&
@@ -152,30 +170,10 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
             </Box>
           </FormControl>
         }
-      </Box>
-    );
-  }
-
-  return (
-    <>
-      <Typography variant="h4" textAlign='center'>
-        Moonbeam Routed Liquidity
-      </Typography>
-      <Typography gutterBottom textAlign='center'>
-        {"[FORWARD]"}
-      </Typography>
-      <Divider />
-      <DarkCard>
-        Select token, amount, & potentially origin
-      </DarkCard>
-      <div>there should be some arrow here or something</div>
-      <DarkCard>
-        Select destination
       </DarkCard>
       <Typography variant="h6" gutterBottom textAlign='center'>
         Transfer {sendingAmount} {Tokens[selectedToken]} from <b>Fantom Testnet</b> ► Moonbase Alpha ► {ParachainEntries.find(([k, v]) => v === selectedNetwork)?.[0]}
       </Typography>
-      <SendTokensForm />
       {etherBalance && (
         <Box display="flex" justifyContent="space-evenly" alignItems="center">
           {selectedToken !== Tokens.FTM &&

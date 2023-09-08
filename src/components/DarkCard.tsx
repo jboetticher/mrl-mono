@@ -1,10 +1,10 @@
 import { Card, CardContent } from "@mui/material";
-import { PropsWithChildren } from "react";
+import { CSSProperties, PropsWithChildren } from "react";
 
 
 
-export default ({ children }: PropsWithChildren<{}>) => (
-    <Card style={{ backgroundColor: 'rgb(45, 66, 77)' }}>
+export default ({ children, style }: PropsWithChildren<{ style?: CSSProperties }>) => (
+    <Card style={{ backgroundColor: 'rgb(45, 66, 77)', ...style }}>
         <CardContent>
             {children}
         </CardContent>

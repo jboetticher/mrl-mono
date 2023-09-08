@@ -60,6 +60,23 @@ const theme = createTheme({
         },
       },
     },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          // Change color of the label
+          color: '#C1C2C5'
+        },
+      }
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          '& $notchedOutline': {
+            borderColor: '#C1C2C5', // Change border color
+          }
+        },
+      }
+    },
   }
 });
 

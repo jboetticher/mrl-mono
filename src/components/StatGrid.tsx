@@ -1,4 +1,4 @@
-import { Card, CardContent, Grid } from "@mui/material";
+import { Card, CardContent, Grid, Typography } from "@mui/material";
 
 // TODO: import stats in props so that it's only fetched once
 export const StatGrid = ({ onlyMobile }: { onlyMobile?: boolean; }) => {
@@ -7,7 +7,17 @@ export const StatGrid = ({ onlyMobile }: { onlyMobile?: boolean; }) => {
       <CardContent>Stats 1</CardContent>
     </Card>
     <Card>
-      <CardContent>Stats 2</CardContent>
+      <CardContent>
+        <Typography variant="h5" gutterBottom textAlign='center'>
+          MRL Implementations
+        </Typography>
+        <a
+          href="https://carrier.so/" target='_blank'
+          style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '2rem 0' }}
+        >
+          <img src="carrier-logo.svg" alt="carrier" style={{ width: '70%' }} />
+        </a>
+      </CardContent>
     </Card>
   </>;
 

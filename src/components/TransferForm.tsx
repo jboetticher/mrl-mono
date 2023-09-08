@@ -3,6 +3,7 @@ import {
   Box, Button, Divider, FormControl, InputLabel,
   MenuItem, Select, SelectChangeEvent, TextField, Typography
 } from "@mui/material";
+import DarkCard from "./DarkCard";
 
 // DApp
 import { FantomTestnet, useEtherBalance, useEthers } from '@usedapp/core'
@@ -157,10 +158,20 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
 
   return (
     <>
-      <Typography variant="h4" gutterBottom textAlign='center'>
+      <Typography variant="h4" textAlign='center'>
         Moonbeam Routed Liquidity
       </Typography>
+      <Typography gutterBottom textAlign='center'>
+        {"[FORWARD]"}
+      </Typography>
       <Divider />
+      <DarkCard>
+        Select token, amount, & potentially origin
+      </DarkCard>
+      <div>there should be some arrow here or something</div>
+      <DarkCard>
+        Select destination
+      </DarkCard>
       <Typography variant="h6" gutterBottom textAlign='center'>
         Transfer {sendingAmount} {Tokens[selectedToken]} from <b>Fantom Testnet</b> ► Moonbase Alpha ► {ParachainEntries.find(([k, v]) => v === selectedNetwork)?.[0]}
       </Typography>

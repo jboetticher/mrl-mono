@@ -41,7 +41,6 @@ export default function App() {
 
     // Create the payload that we will send over
     let payload = await createMRLPayload(selectedNetwork, isEthereumStyledParachain(selectedNetwork) ? account : acc32);
-    console.log("CORRECT PAYLOAD", payload, payload.toString());
 
     // Transfer with payload
     switch (selectedToken) {

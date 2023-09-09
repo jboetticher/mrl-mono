@@ -1,6 +1,6 @@
 // React components & structure
 import {
-  Box, Button, Divider, FormControl, InputLabel,
+  Box, Button, Divider, FormControl, Grid, InputLabel,
   MenuItem, Select, SelectChangeEvent, TextField, Typography
 } from "@mui/material";
 import DarkCard from "./DarkCard";
@@ -115,26 +115,32 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
         <Typography gutterBottom textAlign='center'>
           Token
         </Typography>
-        <FormControl fullWidth variant="outlined">
-          <InputLabel htmlFor="token">Select a Token</InputLabel>
-          <Select
-            value={selectedToken}
-            onChange={(e: SelectChangeEvent<Tokens>) => setSelectedToken(e.target.value as Tokens)}
-            label="Select a Token"
-            inputProps={{ name: "token", id: "token" }}
-          >
-            {Object.entries(Tokens)
-              .filter(([key, value]) => isNaN(Number(key)))
-              .map(([key, value]) => (
-                <MenuItem key={key} value={value}>
-                  {key}
-                </MenuItem>
-              ))}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth variant="outlined">
-          <TextField type="number" value={amount} label="Amount" onChange={(e) => setAmount(parseFloat(e.target.value))}></TextField>
-        </FormControl>
+        <Grid container spacing={2}>
+          <Grid item md={6} xs={12}>
+            <FormControl fullWidth variant="outlined">
+              <InputLabel htmlFor="token">Select a Token</InputLabel>
+              <Select
+                value={selectedToken}
+                onChange={(e: SelectChangeEvent<Tokens>) => setSelectedToken(e.target.value as Tokens)}
+                label="Select a Token"
+                inputProps={{ name: "token", id: "token" }}
+              >
+                {Object.entries(Tokens)
+                  .filter(([key, value]) => isNaN(Number(key)))
+                  .map(([key, value]) => (
+                    <MenuItem key={key} value={value}>
+                      {key}
+                    </MenuItem>
+                  ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item md={6} xs={12}>
+            <FormControl fullWidth variant="outlined">
+              <TextField type="number" value={amount} label="Amount" onChange={(e) => setAmount(parseFloat(e.target.value))}></TextField>
+            </FormControl>
+          </Grid>
+        </Grid>
       </DarkCard>
       <DarkCard style={{ marginBottom: '1rem' }}>
         <Typography gutterBottom textAlign='center'>
@@ -169,6 +175,7 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
               />
             </Box>
           </FormControl>
+          
         }
       </DarkCard>
       <Typography variant="h6" gutterBottom textAlign='center'>

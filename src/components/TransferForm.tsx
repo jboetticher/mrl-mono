@@ -112,7 +112,7 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
       </Typography>
       <Divider />
       <DarkCard style={{ marginBottom: '1rem' }}>
-        <Typography gutterBottom textAlign='center'>
+        <Typography marginBottom={'2rem'} textAlign='center'>
           Token
         </Typography>
         <Grid container spacing={2}>
@@ -143,46 +143,64 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
         </Grid>
       </DarkCard>
       <DarkCard style={{ marginBottom: '1rem' }}>
-        <Typography gutterBottom textAlign='center'>
+        <Typography marginBottom={'2rem'} textAlign='center'>
           Origin & Destination
         </Typography>
-        <FormControl fullWidth variant="outlined" style={{ marginBottom: 12 }}>
-          <InputLabel htmlFor="network">Select a Network</InputLabel>
-          <Select
-            value={selectedNetwork}
-            onChange={(e: SelectChangeEvent<Parachain>) => setSelectedNetwork(e.target.value as Parachain)}
-            label="Select a Network"
-            inputProps={{ name: "network", id: "network" }}
-          >
-            {ParachainEntries.filter(x => isNaN(parseInt(x[0]))).map(x => (
-              <MenuItem key={x[0]} value={x[1]}>
-                {x[0]} ({ETHEREUM_ACCOUNT_PARACHAINS.includes(x[1] as Parachain) ? 'AccountKey20' : 'AccountId32'})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {!ETHEREUM_ACCOUNT_PARACHAINS.includes(selectedNetwork as Parachain) &&
-          <FormControl fullWidth variant="outlined" style={{ marginBottom: 12 }}>
-            <Box display="flex" justifyContent="space-between">
-              <PolkadotConnector setAcc32={setAcc32} />
-              <TextField
-                value={acc32}
-                onChange={(e) => setAcc32(e.target.value)}
-                label="AccountId32 Address"
-                inputProps={{ name: "acc32", id: "acc32" }}
+        <Grid container spacing={2}>
+          <Grid item md={6} xs={12}>
+            <FormControl fullWidth variant="outlined" style={{ marginBottom: 12 }}>
+              <InputLabel htmlFor="network">Select an Origin Network</InputLabel>
+              <Select
+                value={"Fantom Testnet"}
+                label="Select an Origin Network"
+                inputProps={{ name: "network", id: "network" }}
                 disabled={true}
-                style={{ flexGrow: 1 }}
-              />
-            </Box>
-          </FormControl>
-          
+              >
+                <MenuItem value={"Fantom Testnet"}>Fantom Testnet</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item md={6} xs={12}>
+            <FormControl fullWidth variant="outlined" style={{ marginBottom: 12 }}>
+              <InputLabel htmlFor="network">Select a Destination Network</InputLabel>
+              <Select
+                value={selectedNetwork}
+                onChange={(e: SelectChangeEvent<Parachain>) => setSelectedNetwork(e.target.value as Parachain)}
+                label="Select a Destination Network"
+                inputProps={{ name: "network", id: "network" }}
+              >
+                {ParachainEntries.filter(x => isNaN(parseInt(x[0]))).map(x => (
+                  <MenuItem key={x[0]} value={x[1]}>
+                    {x[0]} ({ETHEREUM_ACCOUNT_PARACHAINS.includes(x[1] as Parachain) ? 'AccountKey20' : 'AccountId32'})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+        {!ETHEREUM_ACCOUNT_PARACHAINS.includes(selectedNetwork as Parachain) &&
+          <Grid item xs={12}>
+            <FormControl fullWidth variant="outlined" style={{ marginBottom: 12 }}>
+              <Box display="flex" justifyContent="space-between">
+                <PolkadotConnector setAcc32={setAcc32} />
+                <TextField
+                  value={acc32}
+                  onChange={(e) => setAcc32(e.target.value)}
+                  label="AccountId32 Address"
+                  inputProps={{ name: "acc32", id: "acc32" }}
+                  disabled={true}
+                  style={{ flexGrow: 1 }}
+                />
+              </Box>
+            </FormControl>
+          </Grid>
         }
       </DarkCard>
       <Typography variant="h6" gutterBottom textAlign='center'>
         Transfer {sendingAmount} {Tokens[selectedToken]} from <b>Fantom Testnet</b> ► Moonbase Alpha ► {ParachainEntries.find(([k, v]) => v === selectedNetwork)?.[0]}
       </Typography>
       {etherBalance && (
-        <Box display="flex" justifyContent="space-evenly" alignItems="center">
+        <Box display="flex" justifyContent="space-evenly" alignItems="center" marginTop={'2rem'}>
           {selectedToken !== Tokens.FTM &&
             <Button variant="contained" onClick={handleMANTAApprove}>
               Approve Token

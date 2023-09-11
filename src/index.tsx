@@ -64,7 +64,10 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           // Change color of the label
-          color: '#C1C2C5'
+          color: '#C1C2C5',
+          "&.Mui-disabled": {
+            color: '#85878c', // Change to your desired color for disabled label
+          }
         },
       }
     },
@@ -77,6 +80,36 @@ const theme = createTheme({
         },
       }
     },
+    MuiInputBase: {
+      styleOverrides: {
+        root: {
+          color: '#C1C2C5',
+        },
+        input: {
+          "&.MuiOutlinedInput-input.Mui-disabled": {
+            opacity: 1,
+            WebkitTextFillColor: '#85878c', // Change to your desired color for disabled input text
+          },
+        }
+      }
+    },
+    MuiSelect: {
+      styleOverrides: {
+        select: {
+          "&.MuiInputBase-input.MuiOutlinedInput-input.Mui-disabled": {
+            opacity: 1,
+            WebkitTextFillColor: '#85878c', // Change to your desired color for disabled input text
+          },
+        }
+      }
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          color: 'rgb(37, 38, 43)'
+        }
+      }
+    }
   }
 });
 

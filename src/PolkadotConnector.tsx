@@ -44,22 +44,21 @@ export default function PolkadotConnector({ setAcc32 }: { setAcc32: (v: string) 
             left: '50%',
             transform: 'translate(-50%, -50%)',
             width: 400,
-            bgcolor: 'background.paper',
+            bgcolor: 'rgb(37, 38, 43)',
             border: '2px solid #000',
             borderRadius: 5,
             boxShadow: 24,
             p: 4,
           }}
         >
-          <Typography id="modal-title" variant="h6" component="h2">
+          <Typography id="modal-title" variant="h6" component="h2" textAlign='center'>
             Choose a Polkadot Wallet
           </Typography>
-          <Box display="flex" justifyContent="space-around" mt={2} alignItems="center" flexDirection="column">
+          <Box display="flex" justifyContent="space-around" mt={2} alignItems="center" flexDirection="row" width='100%'>
             {wallets.map(([walletId, displayName, walletImage], index) => (
-              <Box key={walletImage} display="flex" flexDirection="column" alignItems="center">
+              <Box key={walletImage} display="flex" flexDirection="row" alignItems="center">
                 <IconButton color="primary" aria-label={`Wallet ${index + 1}`} onClick={() => enableWallet(walletId)}>
                   <img src={`${process.env.PUBLIC_URL}/${walletImage}`} alt={`Wallet ${index + 1}`} width="50" />
-                    <Typography variant="body1">{displayName}</Typography>
                 </IconButton>
               </Box>
             ))}

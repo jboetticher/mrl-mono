@@ -18,7 +18,7 @@ export default function App() {
       case 0: return <TransferForm setSnackOpen={setSnackOpen} setSnackMessage={setSnackMessage} />;
       default: return <>
         <div>
-          AMONGUS
+          TODO
         </div>
       </>
     }

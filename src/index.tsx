@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from "react-dom";
 import './index.css';
 import App from './App';
-import { Config, DAppProvider, FantomTestnet, Mainnet } from '@usedapp/core';
+import { Config, DAppProvider, FantomTestnet, Mainnet, MoonbaseAlpha } from '@usedapp/core';
 import { getDefaultProvider } from 'ethers';
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
@@ -114,9 +114,10 @@ const theme = createTheme({
 });
 
 const config: Config = {
-  readOnlyChainId: Mainnet.chainId,
+  readOnlyChainId: MoonbaseAlpha.chainId,
   readOnlyUrls: {
     [FantomTestnet.chainId]: getDefaultProvider("https://fantom-testnet.blastapi.io/adafb88b-6012-4705-8aed-eeabbeed35da"),
+    [MoonbaseAlpha.chainId]: getDefaultProvider()
   },
 }
 

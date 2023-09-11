@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, Grid, Typography } from "@mui/material";
 import { ethers } from "ethers";
+import { PieChart } from 'react-minimal-pie-chart';
 
 const GMP_PRECOMPILE_ADDR = '0x0000000000000000000000000000000000000816';
+const WBTC_ADDR = "0xe57ebd2d67b462e9926e04a8e33f01cd0d64346d"
+const WETH_ADDR = "0xab3f0245b83feb11d15aaffefd7ad465a59817ed";
+const USDC_ADDR = "0x931715fee2d06333043d11f658c8ce934ac61d0c";
+const DAI_ADDR = "0x06e605775296e851ff43b4daa541bb0984e9d6fd";
 
 type TokenMints = {
   [x: string]: {
@@ -11,7 +16,8 @@ type TokenMints = {
     tokenSymbol: string;
     contractAddress: string;
     transfers: { timeStamp: string; blockNumber: string; value: string; }[];
-    total: number
+    total: number,
+    totalPrice: number
   };
 }
 
@@ -62,7 +68,8 @@ export const StatGrid = ({ onlyMobile }: { onlyMobile?: boolean; }) => {
             tokenSymbol: item.tokenSymbol,
             contractAddress: item.contractAddress,
             transfers: [],
-            total: 0
+            total: 0,
+            totalPrice: 0
           };
           acc[group].transfers.push({
             timeStamp: item.timeStamp,
@@ -91,7 +98,17 @@ export const StatGrid = ({ onlyMobile }: { onlyMobile?: boolean; }) => {
             // Sum
             return prev + v;
           }, 0);
+
+          // Store total
           tokenMints[addr].total = value;
+
+          // Store USD valuation total
+          if (tokenMints[addr].contractAddress === WBTC_ADDR) // BTC
+            tokenMints[addr].totalPrice = 25000 * value;
+          else if (tokenMints[addr].contractAddress === WETH_ADDR) // ETH
+            tokenMints[addr].totalPrice = 1560 * value;
+          // Default to stablecoin valuation
+          else tokenMints[addr].totalPrice = value;
         }
 
         setInwardLiquidity(tokenMints);
@@ -99,12 +116,50 @@ export const StatGrid = ({ onlyMobile }: { onlyMobile?: boolean; }) => {
       });
   }, []);
 
+  const pieChartData: { title: string, value: number, color: string; symbol: string; }[] = [];
+  for (let addr in inwardLiquidity) {
+    let d = {
+      title: inwardLiquidity[addr].tokenName,
+      value: inwardLiquidity[addr].totalPrice,
+      color: '',
+      symbol: inwardLiquidity[addr].tokenSymbol
+    }
+
+    switch(addr) {
+      case WBTC_ADDR: d.color = '#f2a900'; break;
+      case WETH_ADDR: d.color = '#8a92b3'; break;
+      case DAI_ADDR: d.color = '#fbcc5f'; break;
+      case USDC_ADDR: d.color = '#2775ca'; break;
+      default: d.color = '#444'; break;
+    }
+
+    pieChartData.push(d);
+  }
+
+
   const cards = <>
     <Card style={{ marginBottom: '2rem' }}>
       <CardContent>
         <Typography variant="h6" gutterBottom textAlign='center'>
           MRL Liquidty Sent Inwards
         </Typography>
+        <PieChart
+          data={pieChartData}
+          animate
+          paddingAngle={0}
+          lineWidth={85}
+          label={({ dataEntry }) => { 
+            let v;
+            if (dataEntry.value > 1000) v = Math.floor((dataEntry.value / 1000)).toString() + "k";
+            else v = Math.floor((dataEntry.value));
+            return `${dataEntry.symbol} $${v}`
+          }}
+          labelStyle={(index) => ({
+            fill: 'white',
+            fontSize: '5px',
+            fontFamily: 'Open Sans',
+          })}
+        />
       </CardContent>
     </Card>
     <Card>

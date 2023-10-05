@@ -1,4 +1,4 @@
-use std::{result, vec};
+use std::vec;
 
 use serde::{Serialize, Deserialize};
 use worker::{event, Env, Request, Response, Result, Router, query};
@@ -30,11 +30,11 @@ struct Token {
 }
 
 #[event(fetch)]
-pub async fn fetch(mut req: Request, _env: Env, _ctx: worker::Context) -> Result<Response> {
+pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Response> {
     let router = Router::new();
 
     router
-        .get_async("/totalLiquidityForward", |_req, ctx| async move {
+        .get_async("/totalLiquidityForward", |_req: Request, _ctx| async move {
             let res: Liquidity = Liquidity {
                 token_name: "Bitcoin".to_string(),
                 token_symbol: "WBTC".to_string(),
@@ -59,13 +59,7 @@ pub async fn fetch(mut req: Request, _env: Env, _ctx: worker::Context) -> Result
             }
 
             let x = result.results::<Token>()?;
-            
-            Response::error("Error when retrieving data!", 500)
-
-            // match x {
-            //     Some(r) => Response::from_json(&r),
-            //     None => Response::error("Error when retrieving data!", 500)
-            // }
+            Response::from_json(&x)
         })
         .post_async("/reset", |_req, ctx| async move {
             let d1 = ctx.env.d1("DB")?;
@@ -92,23 +86,23 @@ pub async fn fetch(mut req: Request, _env: Env, _ctx: worker::Context) -> Result
             let statements = vec![
                 d1.prepare(
                     "
-                CREATE TABLE Token (
-                    id INT PRIMARY KEY,
-                    contract_addr VARCHAR(255) NOT NULL,
-                    token_name VARCHAR(255) NOT NULL,
-                    token_sym VARCHAR(255) NOT NULL,
-                    decimals UNSIGNED INT NOT NULL
-                );
+                    CREATE TABLE IF NOT EXISTS Token (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        contract_addr TEXT NOT NULL,
+                        token_name TEXT NOT NULL,
+                        token_sym TEXT NOT NULL,
+                        decimals UNSIGNED INT NOT NULL
+                    );
                 "),
                 d1.prepare("
-                CREATE TABLE TransfersForward (
-                    ID INT PRIMARY KEY,
-                    token_ID INT REFERENCES Token(id),
-                    token_count INT NOT NULL,
-                    usd INT NOT NULL,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    to_chain INT NOT NULL
-                );
+                    CREATE TABLE IF NOT EXISTS TransfersForward (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        token_id INTEGER NOT NULL REFERENCES Token(id),
+                        token_count INTEGER NOT NULL,
+                        usd INTEGER NOT NULL,
+                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        to_chain INTEGER NOT NULL
+                    );
                 "),
                 d1.prepare(
                     "INSERT INTO Token (contract_addr, token_name, token_sym, decimals) VALUES ('0x123', 'Bitcoin', 'WBTC', 8);"),

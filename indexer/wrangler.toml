@@ -9,3 +9,12 @@ command = "cargo install -q worker-build && worker-build --release"
 binding = "DB"
 database_name = "MRL_DB"
 database_id = "1b3d0b4e-035a-4fc2-8a01-080702ba01bf"
+
+[triggers]
+# - At every hour
+crons = [ "* 0/1 * * *"]
+
+[env.dev.triggers]
+# - At every minute
+#crons = ["*/1 * * * *"]
+crons = ["* 0/1 * * *"]

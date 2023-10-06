@@ -11,6 +11,7 @@ wasm-opt = false
 crate-type = ["cdylib"]
 
 [dependencies]
+# ethers-etherscan = "2.0.10"
 serde = { version = "1.0.188" }
 worker = { version = "0.0.18", features = ["d1"] }
 

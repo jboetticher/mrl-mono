@@ -1,7 +1,9 @@
 use std::vec;
 
-use serde::{Serialize, Deserialize};
-use worker::{event, Env, Request, Response, Result, Router, query};
+use serde::{Deserialize, Serialize};
+use worker::{
+    event, query, Env, Request, Response, Result, Router, ScheduleContext, ScheduledEvent, Date,
+};
 
 #[derive(Serialize)]
 struct Liquidity {
@@ -19,14 +21,7 @@ struct Token {
     contract_addr: String,
     token_name: String,
     token_sym: String,
-    decimals: u32
-    /*
-    id INT PRIMARY KEY,
-    contract_addr VARCHAR(255) NOT NULL,
-    token_name VARCHAR(255) NOT NULL,
-    token_sym VARCHAR(255) NOT NULL,
-    decimals UNSIGNED INT NOT NULL
-    */
+    decimals: u32,
 }
 
 #[event(fetch)]
@@ -99,8 +94,9 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         token_id INTEGER NOT NULL REFERENCES Token(id),
                         token_count INTEGER NOT NULL,
-                        usd INTEGER NOT NULL,
-                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        usd REAL NOT NULL,
+                        block_num UNSIGNED INT NOT NULL,
+                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
                         to_chain INTEGER NOT NULL
                     );
                 "),
@@ -128,4 +124,35 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
         })
         .run(req, _env)
         .await
+}
+
+#[event(scheduled)]
+pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext) {
+    let Ok(db) = _env.d1("DB") else {
+        println!("Error occurred with getting the DB during a scheduled event!");
+        return
+    };
+
+    // 1. Get the last entry so that we know when to query from.
+    let statement = db.prepare("SELECT MAX(block_num) AS most_recent_block FROM TransfersForward");
+    let result = statement.first::<i64>(Some("most_recent_block")).await;
+
+   let block: i64 = match result {
+        Err(e) => {
+            println!("Error with most_recent_block: {:?}", e);   
+            4162196
+        },
+        Ok(Some(r)) => r,
+        Ok(None) => 4162196
+    };
+    println!("Determined most recent block: {}", block);
+
+    // 2. Query etherscan
+
+
+    // 3. Sort data
+
+    // 4. Place into the right data
+
+    
 }

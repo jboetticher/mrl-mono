@@ -78,8 +78,8 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
         .post_async("/reset", |_req, ctx| async move {
             let d1 = ctx.env.d1("DB")?;
             let statements = vec![
-                query!(&d1, "DROP TABLE IF EXISTS Token"),
                 query!(&d1, "DROP TABLE IF EXISTS TransfersForward"),
+                query!(&d1, "DROP TABLE IF EXISTS Token"),
             ];
             let result = d1.batch(statements).await?;
 
@@ -92,10 +92,6 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
                 }
             }
 
-            Response::ok(message)
-        })
-        .post_async("/test_data", |_req, ctx| async move {
-            let d1 = ctx.env.d1("DB")?;
             let statements = vec![
                 d1.prepare(
                     "
@@ -123,7 +119,6 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
             ];
 
             let result = d1.batch(statements).await?;
-            let mut message: String = "".to_owned();
             for r in result {
                 if r.success() {
                     message += "Success; ";
@@ -140,6 +135,7 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
 
 #[event(scheduled)]
 pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext) {
+    console_log!("Beginning CRON scheduler event.");
     let Ok(db) = _env.d1("DB") else {
         println!("Error occurred with getting the DB during a scheduled event!");
         return
@@ -158,7 +154,11 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
     };
 
     // 2. Query etherscan
-    let Ok(client) = Client::new(Chain::Moonbeam, "6AGZQXNDPZ5NHMMPJ36B6ZGFQZIRY7YW6I") else {
+    let Ok(moonscan_key) = _env.var("MOONSCAN_KEY") else {
+        console_error!("Error discovering MoonScan API key!");
+        return
+    };
+    let Ok(client) = Client::new(Chain::Moonbeam, moonscan_key.to_string()) else {
         console_error!("Error occurred with creating an etherscan client!");
         return
     };
@@ -202,8 +202,11 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
         })
         .collect();
 
-    // 4. Insert additional data
-    // TODO ^
+    // 4. Query for historical prices
+    let Ok(moonscan_key) = _env.var("MOONSCAN_KEY") else {
+        console_error!("Error discovering MoonScan API key!");
+        return
+    };
 
     // 5. Ensure all of the tokens are already known
     let token_statement: String = etherscan_result
@@ -235,11 +238,10 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
         })
         .collect::<Vec<String>>()
         .join(", ");
-    let token_statement =
+    let token_statement: String =
         "INSERT OR IGNORE INTO Token (contract_addr, token_name, token_sym, decimals) VALUES "
             .to_string()
             + &token_statement;
-    console_log!("{}", token_statement);
     let token_res = db.prepare(token_statement).run().await;
     match token_res {
         Ok(r) => {

@@ -1,8 +1,17 @@
-use std::vec;
+use std::{collections::HashMap, vec};
 
+use ethers_core::{
+    abi::token,
+    types::{Address, Chain, H160, U256, U64},
+};
+use ethers_etherscan::{
+    account::{Sort, TokenQueryOption, TxListParams},
+    Client,
+};
 use serde::{Deserialize, Serialize};
 use worker::{
-    event, query, Env, Request, Response, Result, Router, ScheduleContext, ScheduledEvent, Date,
+    console_error, console_log, event, query, Date, Env, Request, Response, Result, Router,
+    ScheduleContext, ScheduledEvent,
 };
 
 #[derive(Serialize)]
@@ -17,11 +26,21 @@ struct Liquidity {
 
 #[derive(Deserialize, Serialize)]
 struct Token {
-    id: u32,
     contract_addr: String,
     token_name: String,
     token_sym: String,
     decimals: u32,
+}
+
+#[derive(Deserialize, Serialize)]
+struct TransferForward {
+    tx_hash: String,
+    token_addr: String,
+    token_count: u128,
+    usd: f32,
+    block_num: u64,
+    timestamp: String,
+    to_chain: u32,
 }
 
 #[event(fetch)]
@@ -60,16 +79,15 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
             let d1 = ctx.env.d1("DB")?;
             let statements = vec![
                 query!(&d1, "DROP TABLE IF EXISTS Token"),
-                query!(&d1, "DROP TABLE IF EXISTS TransfersForward")
-            ] ;
+                query!(&d1, "DROP TABLE IF EXISTS TransfersForward"),
+            ];
             let result = d1.batch(statements).await?;
 
             let mut message: String = "".to_owned();
             for r in result {
                 if r.success() {
                     message += "Success; ";
-                }
-                else {
+                } else {
                     message += &(r.error().unwrap_or("No error given".to_string()) + "; ");
                 }
             }
@@ -82,31 +100,26 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
                 d1.prepare(
                     "
                     CREATE TABLE IF NOT EXISTS Token (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        contract_addr TEXT NOT NULL,
+                        contract_addr TEXT NOT NULL PRIMARY KEY,
                         token_name TEXT NOT NULL,
                         token_sym TEXT NOT NULL,
                         decimals UNSIGNED INT NOT NULL
                     );
-                "),
-                d1.prepare("
+                ",
+                ),
+                d1.prepare(
+                    "
                     CREATE TABLE IF NOT EXISTS TransfersForward (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        token_id INTEGER NOT NULL REFERENCES Token(id),
-                        token_count INTEGER NOT NULL,
+                        tx_hash TEXT PRIMARY KEY,
+                        token_addr TEXT NOT NULL REFERENCES Token(contract_addr),
+                        token_count UNSIGNED INT NOT NULL,
                         usd REAL NOT NULL,
                         block_num UNSIGNED INT NOT NULL,
-                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                        to_chain INTEGER NOT NULL
+                        timestamp TEXT,
+                        to_chain UNSIGNED INT NOT NULL
                     );
-                "),
-                d1.prepare(
-                    "INSERT INTO Token (contract_addr, token_name, token_sym, decimals) VALUES ('0x123', 'Bitcoin', 'WBTC', 8);"),
-                d1.prepare(
-                    "INSERT INTO Token (contract_addr, token_name, token_sym, decimals) VALUES ('0x456', 'DAI', 'DAI', 8);"),
-                d1.prepare(
-                    "INSERT INTO Token (contract_addr, token_name, token_sym, decimals) VALUES ('0xABC', 'Ethereum', 'WETH', 18);"
-                )
+                ",
+                ),
             ];
 
             let result = d1.batch(statements).await?;
@@ -114,8 +127,7 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
             for r in result {
                 if r.success() {
                     message += "Success; ";
-                }
-                else {
+                } else {
                     message += &(r.error().unwrap_or("No error given".to_string()) + "; ");
                 }
             }
@@ -135,24 +147,159 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
 
     // 1. Get the last entry so that we know when to query from.
     let statement = db.prepare("SELECT MAX(block_num) AS most_recent_block FROM TransfersForward");
-    let result = statement.first::<i64>(Some("most_recent_block")).await;
-
-   let block: i64 = match result {
+    let result = statement.first::<u64>(Some("most_recent_block")).await;
+    let block: u64 = match result {
         Err(e) => {
-            println!("Error with most_recent_block: {:?}", e);   
-            4162196
-        },
+            console_error!("Error with most_recent_block: {:?}", e);
+            4164120
+        }
         Ok(Some(r)) => r,
-        Ok(None) => 4162196
+        Ok(None) => 4164120,
     };
-    println!("Determined most recent block: {}", block);
 
     // 2. Query etherscan
-
+    let Ok(client) = Client::new(Chain::Moonbeam, "6AGZQXNDPZ5NHMMPJ36B6ZGFQZIRY7YW6I") else {
+        console_error!("Error occurred with creating an etherscan client!");
+        return
+    };
+    let Ok(gmp_precompile) = "0x0000000000000000000000000000000000000816".parse() else {
+        console_error!("Error occurred when parsing GMP precompile address!");
+        return
+    };
+    let etherscan_result = client
+        .get_erc20_token_transfer_events(
+            TokenQueryOption::ByAddress(gmp_precompile),
+            // None
+            Some(TxListParams::new(block + 1, 999999999, 0, 0, Sort::Asc)),
+        )
+        .await;
+    let Ok(etherscan_result) = etherscan_result else {
+        console_error!("Error occurred when querying etherscan!");
+        return
+    };
+    console_log!("No transactions discovered after block {}.", block);
+    if etherscan_result.len() == 0 {
+        return;
+    }
 
     // 3. Sort data
+    let mut filtered_etherscan_data: Vec<TransferForward> = etherscan_result
+        .iter()
+        .filter_map(|e| {
+            if e.from == H160::default() {
+                Some(TransferForward {
+                    tx_hash: format!("{:?}", e.hash),
+                    token_addr: format!("{:?}", e.contract_address),
+                    token_count: e.value.as_u128(), // Possibility of panicking if MRL allows for custom tokens with super high values
+                    usd: 0.,                        // TODO: query for USD value at the timestamp
+                    block_num: e.block_number.as_number().unwrap_or(U64::from(0)).as_u64(),
+                    timestamp: e.time_stamp.to_owned(),
+                    to_chain: 1000, // TODO: parse the transaction data
+                })
+            } else {
+                None
+            }
+        })
+        .collect();
 
-    // 4. Place into the right data
+    // 4. Insert additional data
+    // TODO ^
 
-    
+    // 5. Ensure all of the tokens are already known
+    let token_statement: String = etherscan_result
+        .iter()
+        .filter_map(|e: &ethers_etherscan::account::ERC20TokenTransferEvent| {
+            if e.from == H160::default() {
+                let addr = format!("{:?}", e.contract_address);
+                Some((
+                    addr.clone(),
+                    Token {
+                        contract_addr: addr,
+                        token_name: e.token_name.clone(),
+                        token_sym: e.token_symbol.clone(),
+                        decimals: e.token_decimal.parse::<u32>().unwrap_or(18),
+                    },
+                ))
+            } else {
+                None
+            }
+        })
+        .collect::<HashMap<String, Token>>()
+        .iter()
+        .map(|e| {
+            let token = e.1;
+            format!(
+                "('{}', '{}', '{}', {})",
+                token.contract_addr, token.token_name, token.token_sym, token.decimals
+            )
+        })
+        .collect::<Vec<String>>()
+        .join(", ");
+    let token_statement =
+        "INSERT OR IGNORE INTO Token (contract_addr, token_name, token_sym, decimals) VALUES "
+            .to_string()
+            + &token_statement;
+    console_log!("{}", token_statement);
+    let token_res = db.prepare(token_statement).run().await;
+    match token_res {
+        Ok(r) => {
+            if !r.success() {
+                console_error!(
+                    "Internal error when inserting Tokens into DB: {:?}",
+                    r.error()
+                );
+            }
+        }
+        Err(e) => {
+            console_error!("Error when inserting tokens: {}", e);
+            return;
+        }
+    };
+
+    // Prepare statement(s) to insert data
+    let base_statement = "INSERT INTO TransfersForward (tx_hash, token_addr, token_count, usd, block_num, timestamp, to_chain) VALUES ".to_string();
+    let statements: Vec<worker::D1PreparedStatement> = filtered_etherscan_data
+        .chunks(250)
+        .map(|chunk| {
+            let values: Vec<String> = chunk
+                .iter()
+                .map(|transfer| {
+                    format!(
+                        "('{}', '{}', {}, {}, {}, '{}', {})",
+                        transfer.tx_hash,
+                        transfer.token_addr,
+                        transfer.token_count,
+                        transfer.usd,
+                        transfer.block_num,
+                        transfer.timestamp,
+                        transfer.to_chain
+                    )
+                })
+                .collect::<Vec<String>>();
+            let statement = format!("{}{}", base_statement, values.join(", "));
+            db.prepare(statement)
+        })
+        .collect();
+
+    // Insert into database
+    let db_res = db.batch(statements).await;
+    match db_res {
+        Ok(res) => {
+            for r in res {
+                if !r.success() {
+                    console_error!(
+                        "Internal error when inserting new TransferForward txs into DB: {:?}",
+                        r.error()
+                    );
+                }
+            }
+        }
+        Err(e) => {
+            console_error!("Error when batching statements: {}", e);
+        }
+    }
+    console_log!(
+        "Successfully inserted {} transactions into the TransferForward table.",
+        filtered_etherscan_data.len()
+    );
 }

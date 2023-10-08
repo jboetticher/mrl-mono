@@ -4,13 +4,12 @@
 	"private": true,
 	"scripts": {
 		"deploy": "npx wrangler deploy",
-		"dev": "npx wrangler dev --local --test-scheduled"
+		"dev": "npx wrangler dev"
 	},
 	"dependencies": {
 		"@cloudflare/wasm-coredump": "1.0.3"
 	},
 	"devDependencies": {
-		"miniflare": "^2.14.1",
-		"wrangler": "^2.2.4"
+		"wrangler": "^3.11.0"
 	}
 }

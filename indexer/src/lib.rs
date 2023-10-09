@@ -1,14 +1,14 @@
-use std::{collections::HashMap, future::Future, vec};
+use std::{collections::HashMap, vec};
 
-use ethers_core::types::{Chain, H160, U256, U64};
+use ethers_core::types::{Chain, H160, U64};
 use ethers_etherscan::{
     account::{Sort, TokenQueryOption, TxListParams},
     Client,
 };
 use serde::{Deserialize, Serialize};
 use worker::{
-    console_error, console_log, event, query, Date, DateInit, Env, Request, Response, Result,
-    Router, ScheduleContext, ScheduledEvent, console_warn,
+    console_error, console_log, console_warn, event, query, Env, Request, Response,
+    Result, Router, ScheduleContext, ScheduledEvent,
 };
 
 mod twelve_data;
@@ -16,14 +16,15 @@ use twelve_data::get_twelve_data;
 
 use crate::twelve_data::TimeSeries;
 
-#[derive(Serialize)]
-struct Liquidity {
+#[derive(Deserialize, Serialize)]
+struct LiquidityForward {
+    contract_addr: String,
     token_name: String,
-    token_symbol: String,
-    contract_address: String,
-    tokens: u128,
-    usd: f32,
-    number_of_transfers: u32,
+    token_sym: String,
+    decimals: u32,
+    total_usd: f32,
+    // total_tokens: u128,          // Likes to give an error :(
+    number_of_transfers: u32
 }
 
 #[derive(Deserialize, Serialize)]
@@ -36,7 +37,12 @@ struct Token {
 
 impl Default for Token {
     fn default() -> Self {
-        Self { contract_addr: Default::default(), token_name: Default::default(), token_sym: Default::default(), decimals: 18 }
+        Self {
+            contract_addr: Default::default(),
+            token_name: Default::default(),
+            token_sym: Default::default(),
+            decimals: 18,
+        }
     }
 }
 
@@ -56,23 +62,36 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
     let router = Router::new();
 
     router
-        .get_async("/totalLiquidityForward", |_req: Request, _ctx| async move {
-            let res: Liquidity = Liquidity {
-                token_name: "Bitcoin".to_string(),
-                token_symbol: "WBTC".to_string(),
-                contract_address: "0x000".to_string(),
-                tokens: 100,
-                usd: 1000000.25,
-                number_of_transfers: 30,
-            };
+        .get_async("/totalLiquidityForward", |_req: Request, ctx| async move {
+            let d1 = ctx.env.d1("DB")?;
+            let statement = worker::query!(
+                &d1,
+                "
+                SELECT 
+                    t.contract_addr,
+                    t.token_name,
+                    t.token_sym,
+                    t.decimals,
+                    SUM(tf.usd) AS total_usd,
+                    SUM(tf.token_count) AS total_tokens,
+                    COUNT(tf.token_addr) AS number_of_transfers
+                FROM Token AS t
+                INNER JOIN TransfersForward AS tf ON t.contract_addr = tf.token_addr
+                GROUP BY t.contract_addr, t.token_name, t.token_sym, t.decimals
+            "
+            );
 
-            Response::from_json(&res)
-        })
-        .get_async("/testaroonie", |_req, _ctx| async move {
-            let timestamp = "2023-06-28 18:00:00";
-            let date = Date::from(DateInit::String(timestamp.to_owned()));
+            let result = statement.all().await?;
 
-            Response::from_json(&(date.as_millis(), date.to_string()))
+            if !result.success() {
+                return Response::error(
+                    result.error().unwrap_or("No error given".to_string()),
+                    500,
+                );
+            }
+
+            let x = result.results::<LiquidityForward>()?;
+            Response::from_json(&x)
         })
         .get_async("/getTokens", |_req, ctx| async move {
             let d1 = ctx.env.d1("DB")?;
@@ -272,7 +291,8 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
         console_error!("Error discovering Twelve Data API key!");
         return
     };
-    let mut twelve_queries: HashMap<String, Vec<TimeSeries>> = HashMap::<String, Vec<TimeSeries>>::new();
+    let mut twelve_queries: HashMap<String, Vec<TimeSeries>> =
+        HashMap::<String, Vec<TimeSeries>>::new();
     for (_, token) in token_hash.iter() {
         // Skip stablecoins
         if is_usd_stablecoin(&token_hash, &token.token_sym) {
@@ -280,18 +300,22 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
         }
 
         // Query for the other coins
-        let twelve_data = match get_twelve_data(twelve_key.to_string(), token.token_sym.clone()).await {
-            Ok(x) => x,
-            Err(e) => {
-                console_error!("Error fetching Twelve Data!");
-                vec![TimeSeries::default()]
-            }
-        };
+        let twelve_data =
+            match get_twelve_data(twelve_key.to_string(), token.token_sym.clone()).await {
+                Ok(x) => x,
+                Err(e) => {
+                    console_error!("Error fetching Twelve Data!");
+                    vec![TimeSeries::default()]
+                }
+            };
         twelve_queries.insert(token.token_sym.clone(), twelve_data);
     }
     let mut twelve_index = 0;
     for tx in &mut filtered_etherscan_data {
-        let token_decimals = token_hash.get(&tx.token_addr).unwrap_or(&Token::default()).decimals;
+        let token_decimals = token_hash
+            .get(&tx.token_addr)
+            .unwrap_or(&Token::default())
+            .decimals;
 
         // Skips if it's a USD stablecoin
         if is_usd_stablecoin(&token_hash, &tx.token_addr) {
@@ -300,13 +324,17 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
         }
 
         // Gets the data relevant to the token hash
-        let token_symbol_key = token_hash.get(&tx.token_addr).unwrap_or(&Token::default()).token_sym.clone();
+        let token_symbol_key = token_hash
+            .get(&tx.token_addr)
+            .unwrap_or(&Token::default())
+            .token_sym
+            .clone();
         let Some(twelve_data) = twelve_queries.get(&token_symbol_key) else {
             // If it can't find the token, that's bad. We continue anyways.
             console_warn!("Couldn't find TimeSeries data for token with symbol {}!", token_symbol_key);
             continue;
         };
-        
+
         // We get the TimeSeries that is closest to the TransferForward index
         let ts: &TimeSeries = loop {
             // Ensures that we are always returning at least the most recent value
@@ -380,7 +408,11 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
 }
 
 fn is_usd_stablecoin(token_hash: &HashMap<String, Token>, token_addr: &String) -> bool {
-    let sym = token_hash.get(token_addr).unwrap_or(&Token::default()).token_sym.clone();
+    let sym = token_hash
+        .get(token_addr)
+        .unwrap_or(&Token::default())
+        .token_sym
+        .clone();
     sym.contains("USDT") || sym.contains("USDC") || sym.contains("DAI")
 }
 
@@ -388,8 +420,7 @@ fn calculate_usd(exchange_rate: f32, token_count: u128, token_decimals: u32) -> 
     if token_decimals >= 6 {
         let six_sig_figs = (token_count / 10_u128.pow(token_decimals - 6)) as f32;
         exchange_rate * six_sig_figs / 10_f32.powf(6.)
-    }
-    else {
+    } else {
         exchange_rate * (token_count / 10_u128.pow(token_decimals)) as f32
     }
 }

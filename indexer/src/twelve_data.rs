@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use worker::{ Result, Date, DateInit};
+use worker::{ Result, Date, DateInit, console_log};
 
 #[derive(Debug, Deserialize)]
 struct TwelveDataTimeSeriesRaw {
@@ -45,17 +45,19 @@ impl TimeSeries {
 
 pub(crate) async fn get_twelve_data(api_key: String, symbol: String) -> Result<Vec<TimeSeries>> {
     // Ensure that the symbol string isn't a wrapped variant. Will fail if there is ever a normal coin that starts with "W"
-    let symbol = if symbol.starts_with("W") {
+    let sanitized_symbol = if symbol.starts_with("W") {
         let mut c = symbol.chars();
         c.next();
         c.as_str().to_owned()
     } else {
-        symbol
+        symbol.clone()
     };
 
     // Send endpoint
-    let endpoint = format!("https://api.twelvedata.com/time_series?apikey={api_key}&symbol={symbol}/USD&interval=2h&outputsize=5000");
+    console_log!("Getting data from twelvedata for symbol {sanitized_symbol}/USD. Input was {symbol}");
+    let endpoint = format!("https://api.twelvedata.com/time_series?apikey={api_key}&symbol={sanitized_symbol}/USD&interval=2h&outputsize=5000");
 
+    // Get the response
     let twelve_key_response = reqwest::get(endpoint)
         .await
         .map_err(|e| worker::Error::JsError(e.to_string()))?

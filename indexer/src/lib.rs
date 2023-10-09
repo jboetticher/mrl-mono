@@ -8,7 +8,7 @@ use ethers_etherscan::{
 use serde::{Deserialize, Serialize};
 use worker::{
     console_error, console_log, event, query, Date, DateInit, Env, Request, Response, Result,
-    Router, ScheduleContext, ScheduledEvent,
+    Router, ScheduleContext, ScheduledEvent, console_warn,
 };
 
 mod twelve_data;
@@ -215,14 +215,6 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
             }
         })
         .collect();
-    console_log!(
-        "First etherscan data timestamp: {}",
-        filtered_etherscan_data.first().unwrap().timestamp
-    );
-    console_log!(
-        "Last etherscan data timestamp: {}",
-        filtered_etherscan_data.last().unwrap().timestamp
-    );
 
     // 4. Ensure all of the tokens are already known
     let token_hash: HashMap<String, Token> = etherscan_result
@@ -280,25 +272,23 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
         console_error!("Error discovering Twelve Data API key!");
         return
     };
-    // TODO: query for multiple data points, not just ETH :)
-    let Ok(twelve_data) = get_twelve_data(twelve_key.to_string(), "ETH".to_string()).await else {
-        console_error!("Error fetching Twelve Data!");
-        return
-    };
-    console_log!(
-        "First time series data timestamp: {}",
-        twelve_data
-            .first()
-            .unwrap_or(&TimeSeries::default())
-            .timestamp
-    );
-    console_log!(
-        "Last time series data timestamp: {}",
-        twelve_data
-            .last()
-            .unwrap_or(&TimeSeries::default())
-            .timestamp
-    );
+    let mut twelve_queries: HashMap<String, Vec<TimeSeries>> = HashMap::<String, Vec<TimeSeries>>::new();
+    for (_, token) in token_hash.iter() {
+        // Skip stablecoins
+        if is_usd_stablecoin(&token_hash, &token.token_sym) {
+            continue;
+        }
+
+        // Query for the other coins
+        let twelve_data = match get_twelve_data(twelve_key.to_string(), token.token_sym.clone()).await {
+            Ok(x) => x,
+            Err(e) => {
+                console_error!("Error fetching Twelve Data!");
+                vec![TimeSeries::default()]
+            }
+        };
+        twelve_queries.insert(token.token_sym.clone(), twelve_data);
+    }
     let mut twelve_index = 0;
     for tx in &mut filtered_etherscan_data {
         let token_decimals = token_hash.get(&tx.token_addr).unwrap_or(&Token::default()).decimals;
@@ -309,13 +299,15 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
             continue;
         }
 
-        // TODO: implement BTC also
-        if token_hash.get(&tx.token_addr).unwrap_or(&Token::default()).token_sym.contains("BTC") {
+        // Gets the data relevant to the token hash
+        let token_symbol_key = token_hash.get(&tx.token_addr).unwrap_or(&Token::default()).token_sym.clone();
+        let Some(twelve_data) = twelve_queries.get(&token_symbol_key) else {
+            // If it can't find the token, that's bad. We continue anyways.
+            console_warn!("Couldn't find TimeSeries data for token with symbol {}!", token_symbol_key);
             continue;
-        }
+        };
         
-        // Otherwise, we get the TimeSeries that is closest to the TransferForward index
-        // TODO: differentiate between ETH and BTC
+        // We get the TimeSeries that is closest to the TransferForward index
         let ts: &TimeSeries = loop {
             // Ensures that we are always returning at least the most recent value
             if twelve_index >= twelve_data.len() {

@@ -7,8 +7,8 @@ use ethers_etherscan::{
 };
 use serde::{Deserialize, Serialize};
 use worker::{
-    console_error, console_log, console_warn, event, query, Env, Request, Response,
-    Result, Router, ScheduleContext, ScheduledEvent,
+    console_error, console_log, console_warn, event, query, Env, Request, Response, Result, Router,
+    ScheduleContext, ScheduledEvent, Date
 };
 
 mod twelve_data;
@@ -24,7 +24,7 @@ struct LiquidityForward {
     decimals: u32,
     total_usd: f32,
     // total_tokens: u128,          // Likes to give an error :(
-    number_of_transfers: u32
+    number_of_transfers: u32,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -93,6 +93,51 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
             let x = result.results::<LiquidityForward>()?;
             Response::from_json(&x)
         })
+        .get_async(
+            "/liquidityForward/:contract",
+            |_req: Request, ctx| async move {
+                let contract = ctx.param("contract").unwrap();
+                let d1 = ctx.env.d1("DB")?;
+
+                // Get query params
+                let mut timestamp = (Date::now().as_millis() / 1000).to_string();
+                for (k, v) in _req.url()?.query_pairs() { 
+                    if k != "timestamp" {
+                        return Response::error("Unexpected query parameter", 400);
+                    }
+                    timestamp = v.to_string();
+                }
+                console_log!("Timestamp was {}", timestamp);
+
+                // Prepare statement
+                let statement = worker::query!(
+                    &d1,
+                    "
+                    SELECT 
+                        t.contract_addr,
+                        t.token_name,
+                        t.token_sym,
+                        t.decimals,
+                        SUM(tf.usd) AS total_usd,
+                        SUM(tf.token_count) AS total_tokens,
+                        COUNT(tf.token_addr) AS number_of_transfers
+                    FROM Token AS t
+                    INNER JOIN TransfersForward AS tf ON t.contract_addr = tf.token_addr
+                    WHERE t.contract_addr = ?1 AND tf.timestamp < ?2
+                    GROUP BY t.contract_addr, t.token_name, t.token_sym, t.decimals
+                "
+                )
+                .bind(&[contract.into(), timestamp.into()]);
+
+                let result = statement?.first::<LiquidityForward>(None).await?;
+
+                if let Some(liquidity) = result {
+                    Response::from_json(&liquidity)
+                } else {
+                    Response::error("Error when querying results".to_string(), 500)
+                }
+            },
+        )
         .get_async("/getTokens", |_req, ctx| async move {
             let d1 = ctx.env.d1("DB")?;
             let statement = worker::query!(&d1, "SELECT * FROM Token");
@@ -115,15 +160,6 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
                 query!(&d1, "DROP TABLE IF EXISTS Token"),
             ];
             let result = d1.batch(statements).await?;
-
-            let mut message: String = "".to_owned();
-            for r in result {
-                if r.success() {
-                    message += "Success; ";
-                } else {
-                    message += &(r.error().unwrap_or("No error given".to_string()) + "; ");
-                }
-            }
 
             let statements = vec![
                 d1.prepare(
@@ -152,6 +188,8 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
             ];
 
             let result = d1.batch(statements).await?;
+
+            let mut message: String = "".to_owned();
             for r in result {
                 if r.success() {
                     message += "Success; ";
@@ -171,6 +209,37 @@ pub async fn scheduled(_event: ScheduledEvent, _env: Env, _ctx: ScheduleContext)
     console_log!("Beginning CRON scheduler event.");
     let Ok(db) = _env.d1("DB") else {
         println!("Error occurred with getting the DB during a scheduled event!");
+        return
+    };
+
+    // 0. Ensure that the tables exist
+    let statements = vec![
+        db.prepare(
+            "
+            CREATE TABLE IF NOT EXISTS Token (
+                contract_addr TEXT NOT NULL PRIMARY KEY,
+                token_name TEXT NOT NULL,
+                token_sym TEXT NOT NULL,
+                decimals UNSIGNED INT NOT NULL
+            );
+        ",
+        ),
+        db.prepare(
+            "
+            CREATE TABLE IF NOT EXISTS TransfersForward (
+                tx_hash TEXT PRIMARY KEY,
+                token_addr TEXT NOT NULL REFERENCES Token(contract_addr),
+                token_count UNSIGNED INT NOT NULL,
+                usd REAL NOT NULL,
+                block_num UNSIGNED INT NOT NULL,
+                timestamp TEXT,
+                to_chain UNSIGNED INT NOT NULL
+            );
+        ",
+        ),
+    ];
+    let Ok(_) = db.batch(statements).await else {
+        console_error!("Error sending the table creation!");
         return
     };
 

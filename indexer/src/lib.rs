@@ -7,8 +7,8 @@ use ethers_etherscan::{
 };
 use serde::{Deserialize, Serialize};
 use worker::{
-    console_error, console_log, console_warn, event, query, Env, Request, Response, Result, Router,
-    ScheduleContext, ScheduledEvent, Date
+    console_error, console_log, console_warn, event, Cors, Date, Env, Request, Response, Result,
+    Router, ScheduleContext, ScheduledEvent,
 };
 
 mod twelve_data;
@@ -61,8 +61,10 @@ struct TransferForward {
 pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Response> {
     let router = Router::new();
 
+
     router
         .get_async("/totalLiquidityForward", |_req: Request, ctx| async move {
+            let cors = Cors::default().with_origins(vec!["*"]).with_allowed_headers(vec!["*"]);
             let d1 = ctx.env.d1("DB")?;
             let statement = worker::query!(
                 &d1,
@@ -87,23 +89,26 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
                 return Response::error(
                     result.error().unwrap_or("No error given".to_string()),
                     500,
-                );
+                )?
+                .with_cors(&cors);
             }
 
             let x = result.results::<LiquidityForward>()?;
-            Response::from_json(&x)
+            Response::from_json(&x)?.with_cors(&cors)
         })
         .get_async(
             "/liquidityForward/:contract",
             |_req: Request, ctx| async move {
+                let cors = Cors::default().with_origins(vec!["*"]).with_allowed_headers(vec!["*"]);
                 let contract = ctx.param("contract").unwrap();
                 let d1 = ctx.env.d1("DB")?;
 
                 // Get query params
                 let mut timestamp = (Date::now().as_millis() / 1000).to_string();
-                for (k, v) in _req.url()?.query_pairs() { 
+                for (k, v) in _req.url()?.query_pairs() {
                     if k != "timestamp" {
-                        return Response::error("Unexpected query parameter", 400);
+                        return Response::error("Unexpected query parameter", 400)?
+                            .with_cors(&Cors::default());
                     }
                     timestamp = v.to_string();
                 }
@@ -132,13 +137,15 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
                 let result = statement?.first::<LiquidityForward>(None).await?;
 
                 if let Some(liquidity) = result {
-                    Response::from_json(&liquidity)
+                    Response::from_json(&liquidity)?.with_cors(&cors)
                 } else {
-                    Response::error("Error when querying results".to_string(), 500)
+                    Response::error("Error when querying results".to_string(), 500)?
+                        .with_cors(&cors)
                 }
             },
         )
         .get_async("/getTokens", |_req, ctx| async move {
+            let cors = Cors::default().with_origins(vec!["*"]).with_allowed_headers(vec!["*"]);
             let d1 = ctx.env.d1("DB")?;
             let statement = worker::query!(&d1, "SELECT * FROM Token");
             let result = statement.all().await?;
@@ -147,11 +154,12 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
                 return Response::error(
                     result.error().unwrap_or("No error given".to_string()),
                     500,
-                );
+                )?
+                .with_cors(&cors);
             }
 
             let x = result.results::<Token>()?;
-            Response::from_json(&x)
+            Response::from_json(&x)?.with_cors(&cors)
         })
         /* .post_async("/reset", |_req, ctx| async move {
             let d1 = ctx.env.d1("DB")?;
@@ -160,7 +168,6 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
                 query!(&d1, "DROP TABLE IF EXISTS Token"),
             ];
             let result = d1.batch(statements).await?;
-
             let statements = vec![
                 d1.prepare(
                     "
@@ -186,9 +193,7 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
                 ",
                 ),
             ];
-
             let result = d1.batch(statements).await?;
-
             let mut message: String = "".to_owned();
             for r in result {
                 if r.success() {
@@ -197,7 +202,6 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
                     message += &(r.error().unwrap_or("No error given".to_string()) + "; ");
                 }
             }
-
             Response::ok(message)
         })
         */

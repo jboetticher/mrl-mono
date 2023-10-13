@@ -153,7 +153,7 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
             let x = result.results::<Token>()?;
             Response::from_json(&x)
         })
-        .post_async("/reset", |_req, ctx| async move {
+        /* .post_async("/reset", |_req, ctx| async move {
             let d1 = ctx.env.d1("DB")?;
             let statements = vec![
                 query!(&d1, "DROP TABLE IF EXISTS TransfersForward"),
@@ -200,6 +200,7 @@ pub async fn fetch(req: Request, _env: Env, _ctx: worker::Context) -> Result<Res
 
             Response::ok(message)
         })
+        */
         .run(req, _env)
         .await
 }

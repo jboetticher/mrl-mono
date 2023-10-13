@@ -1,0 +1,15 @@
+{
+	"name": "mrl-indexer",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"deploy": "npx wrangler deploy",
+		"dev": "npx wrangler dev"
+	},
+	"dependencies": {
+		"@cloudflare/wasm-coredump": "1.0.3"
+	},
+	"devDependencies": {
+		"wrangler": "^3.11.0"
+	}
+}

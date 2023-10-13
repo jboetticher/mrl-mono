@@ -8,6 +8,10 @@ A TypeScript React project that was used to send an MRL message across chains on
 
 Also displays some statistics and information about MRL.  
 
+## indexer
+
+A rust-based indexer for storing data about MRL. Currently only provides USD data, still in development.
+
 ## reverse-demo
 
 The canonical method to use Polkadot.js in a TypeScript node project to send tokens from a parachain back to a Wormhole destination chain.

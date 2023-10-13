@@ -1,7 +1,7 @@
 name = "mrl-indexer"
 main = "build/worker/shim.mjs"
 compatibility_date = "2023-03-22"
-route = { pattern = "mrl-indexer.projk.net/*", zone_id = 'e4212297e7f714f25f8d6893523e0f1c' }
+# route = { pattern = "mrl-indexer.projk.net/*", zone_id = 'e4212297e7f714f25f8d6893523e0f1c' }
 
 [build]
 command = "cargo install -q worker-build && worker-build --release"

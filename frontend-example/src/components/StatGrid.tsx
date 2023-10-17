@@ -8,6 +8,7 @@ const WBTC_ADDR = "0xe57ebd2d67b462e9926e04a8e33f01cd0d64346d"
 const WETH_ADDR = "0xab3f0245b83feb11d15aaffefd7ad465a59817ed";
 const USDC_ADDR = "0x931715fee2d06333043d11f658c8ce934ac61d0c";
 const DAI_ADDR = "0x06e605775296e851ff43b4daa541bb0984e9d6fd";
+const USDT_ADDR = "0xc30e9ca94cf52f3bf5692aacf81353a27052c46f";
 
 type TotalLiquidity = {
   decimals: string;
@@ -45,6 +46,7 @@ export const StatGrid = ({ onlyMobile }: { onlyMobile?: boolean; }) => {
       case WETH_ADDR: d.color = '#8a92b3'; break;
       case DAI_ADDR: d.color = '#fbcc5f'; break;
       case USDC_ADDR: d.color = '#2775ca'; break;
+      case USDT_ADDR: d.color = '#26A17B'; break;
       default: d.color = '#444'; break;
     }
 

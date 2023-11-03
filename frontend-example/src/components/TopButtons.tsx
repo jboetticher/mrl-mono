@@ -1,5 +1,6 @@
-import { Box, Button } from "@mui/material";
+import { Box, Button, IconButton } from "@mui/material";
 import { FantomTestnet, useEthers } from "@usedapp/core";
+import GitHubIcon from '@mui/icons-material/GitHub';
 import { useEffect } from "react";
 
 export const AddNetworkButton = () => {
@@ -41,4 +42,14 @@ export const ConnectButton = () => {
       </Button>
     </Box>
   );
+}
+
+export const GitHubButton = () => {
+  return (
+    <Box position={"absolute"} top={20} left={'4rem'}>
+      <IconButton href="https://github.com/jboetticher/mrl-mono" target="_blank">
+        <GitHubIcon fontSize="large" color="primary" />
+      </IconButton>
+    </Box>
+  )
 }

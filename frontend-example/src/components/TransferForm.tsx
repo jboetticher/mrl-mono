@@ -27,6 +27,16 @@ type TransferFormProps = {
   setSnackMessage: (msg: string) => void
 };
 
+/**
+ * WORKFLOW:
+ * 1. Select a token
+ * 2. Display the chains that the token can be transferred to.
+ * 3. Connect polkadot wallet to select the destination chain.
+ * 4. Transfer
+ * 5. Wait for wormhole to relay the VAA, then present the button for manual transfer (the relayer might not be up)
+ * 
+ */
+
 export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
   const { account, library, chainId } = useEthers();
   const etherBalance = useEtherBalance(account)
@@ -63,6 +73,7 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
           payload
         );
         break;
+      /* NOTE: the MANTA chain has stalled, so the MANTA token is disabled
       case Tokens.MANTA:
         transferFromEth(
           FANTOM_TESTNET_TOKEN_BRIDGE,
@@ -76,6 +87,7 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
           payload
         );
         break;
+      */
     }
 
     // Monitor parachain
@@ -90,7 +102,8 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
     );
   }
 
-  // Callback to send an approve message for MANTA
+  // NOTE: MANTA has stalled, so the MANTA token has been disabled
+  // Callback to send an approve message for MANTA token
   async function handleMANTAApprove() {
     if (account === undefined) {
       alert("No account connected!");
@@ -171,14 +184,14 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
               >
                 {ParachainEntries.filter(x => isNaN(parseInt(x[0]))).map(x => (
                   <MenuItem key={x[0]} value={x[1]}>
-                    {x[0]} ({ETHEREUM_ACCOUNT_PARACHAINS.includes(x[1] as Parachain) ? 'AccountKey20' : 'AccountId32'})
+                    {x[0]} ({isEthereumStyledParachain(x[1] as Parachain) ? 'AccountKey20' : 'AccountId32'})
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
         </Grid>
-        {!ETHEREUM_ACCOUNT_PARACHAINS.includes(selectedNetwork as Parachain) &&
+        {!isEthereumStyledParachain(selectedNetwork as Parachain) &&
           <Grid item xs={12}>
             <FormControl fullWidth variant="outlined" style={{ marginBottom: 12 }}>
               <Box display="flex" justifyContent="space-between">
@@ -196,9 +209,6 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
           </Grid>
         }
       </DarkCard>
-      <Typography variant="h6" gutterBottom textAlign='center'>
-        Transfer {sendingAmount} {Tokens[selectedToken]} from <b>Fantom Testnet</b> ► Moonbase Alpha ► {ParachainEntries.find(([k, v]) => v === selectedNetwork)?.[0]}
-      </Typography>
       {etherBalance && (
         <Box display="flex" justifyContent="space-evenly" alignItems="center" marginTop={'2rem'}>
           {selectedToken !== Tokens.FTM &&
@@ -206,7 +216,10 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
               Approve Token
             </Button>
           }
-          <Button variant="contained" onClick={handleXCMTransfer}>
+          <Button variant="contained"
+            onClick={handleXCMTransfer}
+            disabled={amount == 0 || (!isEthereumStyledParachain(selectedNetwork) && acc32.length == 0)}
+          >
             Click to Transfer
           </Button>
         </Box>

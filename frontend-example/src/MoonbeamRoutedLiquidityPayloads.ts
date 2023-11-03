@@ -4,9 +4,9 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 /**The parachain IDs of each parachain. Rarely subject to change */
 export enum Parachain {
   MoonbaseBeta = 888,
-  Interlay = 2032,
   HydraDX = 2034,
-  Manta = 2104
+  // Interlay = 2032,
+  // Manta = 2104
 }
 
 /**List of parachains that use ethereum (20) accounts */
@@ -16,9 +16,9 @@ export const ETHEREUM_ACCOUNT_PARACHAINS = [
 
 /**List of parachains that use substrate (32) accounts */
 export const SUBSTRATE_ACCOUNT_PARACHAINS = [
-  Parachain.Interlay,
   Parachain.HydraDX,
-  Parachain.Manta
+  // Parachain.Interlay,
+  // Parachain.Manta
 ];
 
 /**The Uint8Array format of the MRL precompile */

@@ -53,11 +53,17 @@ export const StatGrid = ({ onlyMobile }: { onlyMobile?: boolean; }) => {
     pieChartData.push(d);
   }
 
+  const totalUSD = Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0
+  }).format(inwardLiquidity.reduce((acc, x) => x.total_usd + acc, 0));
+  const totalTransfers = inwardLiquidity.reduce((acc, x) => x.number_of_transfers + acc, 0);
 
   const cards = <>
     <Card style={{ marginBottom: '2rem' }}>
       <CardContent>
-        <Typography variant="h6" gutterBottom textAlign='center'>
+        <Typography variant="h6" marginBottom='2rem' textAlign='center'>
           MRL Liquidty Sent Inwards
         </Typography>
         <PieChart
@@ -71,12 +77,18 @@ export const StatGrid = ({ onlyMobile }: { onlyMobile?: boolean; }) => {
             else v = Math.floor((dataEntry.value));
             return `${dataEntry.symbol} $${v}`
           }}
-          labelStyle={(index) => ({
+          labelStyle={() => ({
             fill: 'white',
             fontSize: '5px',
             fontFamily: 'Open Sans',
           })}
         />
+        <Typography variant='body1' textAlign='center' marginTop='2rem'>
+          Total USD: {totalUSD}
+        </Typography>
+        <Typography variant='body1' textAlign='center'>
+          Total Transfers: {totalTransfers}
+        </Typography>
       </CardContent>
     </Card>
     <Card>

@@ -6,6 +6,7 @@ import { AddNetworkButton, ConnectButton } from "./components/TopButtons";
 import { TxNotificationBar } from "./components/TxNotificationBar";
 import { StatGrid } from "./components/StatGrid";
 import TransferForm from "./components/TransferForm";
+import About from "./components/About";
 
 export default function App() {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -16,6 +17,7 @@ export default function App() {
   function tabSwitchResult() {
     switch (selectedTab) {
       case 0: return <TransferForm setSnackOpen={setSnackOpen} setSnackMessage={setSnackMessage} />;
+      case 1: return <About />;
       default: return <>
         <div>
           TODO

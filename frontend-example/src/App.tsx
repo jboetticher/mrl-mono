@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   Card, CardContent, Grid, Tabs, Tab
 } from "@mui/material";
-import { AddNetworkButton, ConnectButton } from "./components/TopButtons";
+import { AddNetworkButton, ConnectButton, GitHubButton } from "./components/TopButtons";
 import { TxNotificationBar } from "./components/TxNotificationBar";
 import { StatGrid } from "./components/StatGrid";
 import TransferForm from "./components/TransferForm";
@@ -50,6 +50,7 @@ export default function App() {
       </Grid>
       <ConnectButton />
       <AddNetworkButton />
+      <GitHubButton />
       {TxNotificationBar(snackOpen, setSnackOpen, snackMessage)}
     </>
   )

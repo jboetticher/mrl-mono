@@ -61,7 +61,7 @@ export const StatGrid = ({ onlyMobile }: { onlyMobile?: boolean; }) => {
   const totalTransfers = inwardLiquidity.reduce((acc, x) => x.number_of_transfers + acc, 0);
 
   const cards = <>
-    <Card style={{ marginBottom: '2rem' }}>
+    <Card style={{ marginBottom: '2rem', paddingLeft: '0' }}>
       <CardContent>
         <Typography variant="h6" marginBottom='2rem' textAlign='center'>
           MRL Liquidty Sent Inwards
@@ -106,6 +106,6 @@ export const StatGrid = ({ onlyMobile }: { onlyMobile?: boolean; }) => {
     </Card>
   </>;
 
-  if (onlyMobile) return <Grid item xs={12} sx={{ display: { sm: 'block', md: 'none' } }}>{cards}</Grid>;
-  else return <Grid item md={4} lg={3} sx={{ display: { xs: 'none', sm: 'none', md: 'block' } }}>{cards}</Grid>;
+  if (onlyMobile) return <Grid item xs={12} sx={{ paddingLeft: '0 !important', display: { sm: 'block', md: 'none' }}}>{cards}</Grid>;
+  else return <Grid item md={4} lg={3} sx={{ paddingLeft: '0 !important', display: { xs: 'none', sm: 'none', md: 'block' }}}>{cards}</Grid>;
 };

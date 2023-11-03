@@ -20,7 +20,6 @@ import { useState } from "react";
 // Constants
 const FANTOM_TESTNET_TOKEN_BRIDGE = "0x599CEa2204B4FaECd584Ab1F2b6aCA137a0afbE8";
 const FANTOM_TESTNET_MANTA = "0x04f4670D817B21b652FC51ea0f4f74836D7f6db5";
-const AMOUNT = "3";
 
 type TransferFormProps = {
   setSnackOpen: (open: boolean) => void,
@@ -65,7 +64,7 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
         transferFromEthNative(
           FANTOM_TESTNET_TOKEN_BRIDGE,
           l.getSigner(),
-          parseEther(AMOUNT),
+          parseEther(amount.toString()),
           CHAINS.moonbeam,
           MOONBEAM_ROUTED_LIQUIDITY_PRECOMPILE,
           0, // relayerFee, doesn't matter because it's contract controlled
@@ -112,8 +111,6 @@ export default ({ setSnackOpen, setSnackMessage }: TransferFormProps) => {
     const l = library as providers.JsonRpcProvider;
     approveEth(FANTOM_TESTNET_TOKEN_BRIDGE, FANTOM_TESTNET_MANTA, l.getSigner(), "5000000000000000000");
   }
-
-  const sendingAmount = selectedToken === Tokens.FTM ? AMOUNT : '0.5';
 
   return (
     <>

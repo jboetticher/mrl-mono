@@ -1,5 +1,6 @@
 import { CHAINS, tryNativeToUint8Array } from '@certusone/wormhole-sdk';
 import { ApiPromise, WsProvider } from '@polkadot/api';
+import { decodeAddress } from '@polkadot/util-crypto';
 
 /**The parachain IDs of each parachain. Rarely subject to change */
 export enum Parachain {
@@ -39,6 +40,25 @@ enum MRLTypes {
   VersionedUserAction = "VersionedUserAction",
 };
 
+/*
+
+createType(XcmVersionedMultiLocation):: Enum(V3):: Struct: 
+
+failed on interior: {"_enum":
+{"Here":"Null",
+"X1":"XcmV3Junction",
+"X2":"(XcmV3Junction,XcmV3Junction)",
+"X3":"(XcmV3Junction,XcmV3Junction,XcmV3Junction)",
+"X4":"(XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction)",
+"X5":"(XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction)",
+"X6":"(XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction)",
+"X7":"(XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction)",
+"X8":"(XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction,XcmV3Junction)"}}:: 
+
+Enum(X2):: Tuple: failed on 1:: Enum(AccountId32):: Struct: failed on id: [u8;32]:: Expected input with 32 bytes (256 bits), found 48 bytes
+
+*/
+
 /**
  * Creates a payload that can instruct Moonbeam's Routed Liquidity precompile where to send data
  * @param {Parachain} parachainId The parachain ID of the parachain you wish to send tokens to
@@ -48,7 +68,6 @@ enum MRLTypes {
 export default async function createMRLPayload(parachainId: Parachain, account: string): Promise<Uint8Array> {
   // Create a multilocation object based on the target parachain's account type
   const isEthereum = ETHEREUM_ACCOUNT_PARACHAINS.includes(parachainId);
-  console.log("parachain: ", parachainId)
   let multilocation = {
     V3: {
       parents: 1,
@@ -57,7 +76,7 @@ export default async function createMRLPayload(parachainId: Parachain, account: 
           { Parachain: parachainId },
           isEthereum ?
             { AccountKey20: { key: account } } :
-            { AccountId32: { id: account } }
+            { AccountId32: { id: decodeAddress(account) } }
         ]
       }
     }
@@ -75,7 +94,9 @@ export default async function createMRLPayload(parachainId: Parachain, account: 
   });
 
   // Format multilocation object as a Polkadot.js type
+  console.log('creating versioned multilocation')
   const versionedMultilocation = api.createType(MRLTypes.XcmVersionedMultiLocation, multilocation);
+  console.log('creating user action')
   const userAction = api.createType(MRLTypes.XcmRoutingUserActionWithFee, { destination: versionedMultilocation, fee: 10000 });
 
   // Wrap and format the MultiLocation object into the precompile's input type

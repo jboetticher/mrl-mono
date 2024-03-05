@@ -19,7 +19,7 @@ There will likely be issues with conflicting transfers to the same account in th
 */
 
 export const PARACHAIN_WSS = {
-  [Parachain.MoonbaseBeta]: 'wss://frag-moonbase-beta-rpc-ws.g.moonbase.moonbeam.network',
+  [Parachain.MoonbaseBeta]: 'wss://deo-moon-rpc-1-moonbase-beta-rpc-1.moonbase.ol-infra.network',
   [Parachain.HydraDX]: 'wss://hydradx-moonbase-rpc.play.hydration.cloud',
   // [Parachain.Interlay]: 'wss://interlay-moonbeam-alphanet.interlay.io/parachain',
   // [Parachain.Manta]: 'wss://c1.manta.moonsea.systems',

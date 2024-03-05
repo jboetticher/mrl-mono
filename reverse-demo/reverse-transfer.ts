@@ -23,7 +23,7 @@ In a single transaction, batch 2 xcm transactions:
 
 // Endpoints
 const ALPHA_ENDPOINT = 'wss://wss.api.moonbase.moonbeam.network';
-const BETA_ENDPOINT = 'wss://frag-moonbase-beta-rpc-ws.g.moonbase.moonbeam.network';
+const BETA_ENDPOINT = 'wss://deo-moon-rpc-1-moonbase-beta-rpc-1.moonbase.ol-infra.network';
 
 // Smart Contracts & Addresses
 const BATCH_PRECOMPILE_ADDRESS = '0x0000000000000000000000000000000000000808';
